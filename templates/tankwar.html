@@ -1,0 +1,1179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<title>TankWar&copy;</title>
+<style type="text/css">
+body {
+	margin: 0;
+	padding: 0;
+	background: silver;
+	border: 1px solid black;
+	font-size: 14px;
+	font-family: Arial;
+}
+
+input {
+	font-family: Arial;
+	font-size: 12px;
+	margin: 0 0 0 3px;
+}
+
+input[type=text] {
+	border: 1px solid white;
+}
+
+input[type=button], input[type=number] {
+	margin: 2px 0px 2px 15px;
+	width: 130px;
+	display: block;
+	border: 1px solid white;
+	background: silver;
+}
+
+button {
+	margin: 0 0 10px 15px;
+	width: 70px;
+	border: 1px solid white;
+	background: silver;
+}
+
+button+button {
+	margin: 0;
+}
+
+input:hover, button:hover /*, input:hover, button:hover, #ammoMenu div input:hover, #lobby input:hover*/ {
+	border: 1px solid black !important;
+}
+
+input {
+	border: 1px solid white !important;
+}
+
+
+canvas {
+	width: 1000px;
+	height: 400px;
+	/*-apple-dashboard-region:dashboard-region(control rectangle 0px 0px 0px 0px);*/
+}
+
+#canvasContainer {
+	width: 300px;	
+	overflow: auto;
+}
+
+#controls {
+	padding: 0 0 0 10px;	
+	
+}
+#log {
+	
+}
+
+#showMessage, #windContainer {
+	position: absolute;
+	top: 50px;
+	left: 1px;
+	width: 300px;
+	text-align: center;
+	font-size: 20px;
+	font-weight: 200;
+}
+
+#angleDiv,#powerDiv {
+	z-index: 2;
+	position: absolute;
+	left: -100px;
+	top: -100px;
+}
+
+#mainmenu {
+	height: 250px;	
+}
+
+
+
+#ammoMenu label, #terrainMenu label {
+	margin-left: 15px;
+	display:inline-block;
+	width: 6em;
+}
+
+#ammoMenu div input, #terrainMenu div input {
+	display: inline;
+	border: 1px solid white;
+	width: 30px;
+}
+
+#terrainMenu div input {
+	width: 50px;
+}
+
+#terrainMenu p {
+	font-size: 12px;
+	margin: 10px 5px 10px 5px;
+}
+
+#powerDisplay, #angleDisplay {
+	border: 1px solid black;
+	width: 40px;
+	text-align: center;
+	display:inline-block;
+}
+
+#displayHolder p {
+	margin: 0 0 2px;
+}
+
+#weaponsHolder {
+	margin: 0 0 0 10px;
+}
+
+
+#weaponMenu {
+	text-align: center;		
+}
+
+#weaponMenu img+img {
+	margin: 1px;
+}
+
+#lobby input, #createGameMenu div input {
+	display: inline-block;
+	margin: 0;
+	border: 1px solid white;
+}
+
+#createGameMenu div input[type=number] {
+	width: 40px;
+}
+
+#createGameMenu label {
+	margin-left: 15px;
+	display:inline-block;
+	width: 7em;
+}
+
+#lobby input[type=button] {
+	width: 50px;
+}
+
+#chatHolder {
+	margin: 0;
+	margin-left: 3px;
+}
+#chat {
+	margin: 0;
+	font-size: 12px;
+	width: 170px;
+	border: 1px solid black;
+	height: 330px;
+	overflow: auto;
+}
+
+#ingameChat {
+	font-size: 12px;
+	width: 280px;	
+	height: 40px;
+	overflow: auto;
+	border: 1px solid gray;
+}
+
+#userList, #roomList {
+	width: 50px;
+	font-size: 12px;
+}
+
+#lobby {
+	
+}
+
+#lobbyLeft,#chatHolder,#lobbyRight {
+	float:left;	
+}
+
+.menu {
+	border: 1px solid black;
+	position: absolute;
+	left: 25px;
+	top: 10px;
+	width: 250px;
+	min-height: 100px;
+	background: silver;
+	padding: 0 0 10px;	
+}
+
+.healthDisplay {
+	position: absolute;
+}
+
+.float {
+	float: left;
+}
+
+.selector {
+	opacity: 0.3;
+	border: 1px solid black;
+}
+
+.selector:hover {
+	opacity: 0.5;
+}
+
+.selected, .selected:hover {
+	opacity: 1.0;
+}
+
+</style>
+<script type="text/javascript" src="common.js"></script>
+<script type="text/javascript" src="pixelfont.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript" src="timing.js"></script>
+<script type="text/javascript" src="terrain.js"></script>
+<script type="text/javascript" src="weapons.js"></script>
+<script type="text/javascript" src="human.js"></script>
+<script type="text/javascript" src="ai.js"></script>
+<script type="text/javascript" src="checkupdate.js"></script>
+<script type="text/javascript" src="mp.js"></script>
+<script type="text/javascript">
+var requestPath = '{{data.path}}sseunite';
+window.onload = init;
+var menuHandler,AIready=false,prevState=states.wait;
+var mainMenu,mpMenu,playersMenu,ammoMenu,weaponMenu,weaponSelect,terrainMenu;
+var playersInputList,ammoInputList,terrainInputList,widgetWidthSelect,windImage;
+var players = new Array(),deadPlayers = new Array(),curPlayer;
+var widgetW,widgetH,widgetVersion='2.7';
+var server=null;
+function init()
+{	
+	//prepare canvas
+	var c = document.getElementsByTagName('canvas')[0];
+	c.onmousemove = canvasMouseMove;
+	c.onclick = canvasClick;
+	
+	canvasH = c.height;
+	canvasW = c.width;
+	
+	ctx = c.getContext('2d');
+
+	//Create wind indicator
+	windImage = new Image();
+	$('windContainer').appendChild(windImage);	
+
+
+	//create menus
+	menuHandler = new MenuHandler();
+	
+	mainMenu = new Menu();
+	var img = new Image();
+	img.src = 'tw.png';
+	
+	var tnk = new Image();
+	tnk.setAttribute('style','float:right;margin-top:10px;margin-right:20px');
+	tnk.src = 'tank.png';
+	
+	mainMenu.obj.appendChild(img);
+	mainMenu.obj.appendChild(tnk);
+	mainMenu.obj.id = 'mainmenu';
+	mainMenu.addButton('Start Game',startGame);
+	/*mainMenu.addButton('Play vs. computer','startGame(\'computer\')');
+	mainMenu.addButton('Computer vs. computer','startGame(\'cpuvscpu\')');*/
+	mainMenu.addButton('Select Players',function(){menuHandler.showMenu(playersMenu);});
+	mainMenu.addButton('Select Weapons',function(){menuHandler.showMenu(ammoMenu);});	
+	mainMenu.addButton('New Map',createNewMap);
+	mainMenu.addButton('Map Settings',function(){menuHandler.showMenu(terrainMenu);});
+	mainMenu.addButton('Play Online',function() {		
+		/*var s = document.createElement('script');
+		s.src = 'mp.js';
+		s.type = 'text/javascript';
+		document.getElementsByTagName('head')[0].appendChild(s);		*/
+		menuHandler.showMenu(mpMenu);
+		initMP();
+	});
+	mainMenu.addButton('Close',function(){window.close();});
+	
+	var widthSelect = document.createElement('p');
+	widthSelect.setAttribute('style','margin-left: 20px');
+	widthSelect.innerHTML = 'Widget width';
+	
+	var w = '';	
+	if(w == '')
+	{
+		w = 302;
+		if(screen.width > 1002)
+			w = 1002;		
+	}	
+	
+	var ww = document.createElement('input');
+	ww.type = 'number';
+	ww.value = w;
+	ww.min = 302;
+	ww.max = 1002;
+	ww.setAttribute('style','display:inline;width:50px');
+	ww.onchange = setWidgetWidth;
+	ww.onkeydown = setWidgetWidth;
+	ww.id = 'widgetWidth';
+	
+	widgetW = w;
+	
+	widgetWidthSelect = ww;
+	
+	widthSelect.appendChild(ww);
+	
+	setWidgetWidth(w);
+	
+	mainMenu.obj.appendChild(widthSelect);
+	
+	playersMenu = new Menu();
+	img = new Image();
+	img.src = 'players.png';
+	playersMenu.obj.appendChild(img);
+	playersInputList = new InputList(2,8);
+	playersInputList.showNumbers = true;
+	playersInputList.showTypeSelector(new Array('Human','Computer'));
+	playersInputList.appendTo(playersMenu.obj);
+	
+	playersMenu.addButton('Close',function(){menuHandler.closeMenu();});
+	
+	terrainMenu = new Menu();
+	img = new Image();
+	img.src = 'map.png';
+	terrainMenu.obj.appendChild(img);
+	terrainMenu.obj.id = 'terrainMenu';
+	terrainInputList = new InputList(-1,-1);
+	terrainInputList.showButtons = false;
+	terrainInputList.appendTo(terrainMenu.obj);
+	terrainInputList.addField('number','Base height',300,0,500);
+	terrainInputList.addField('number','Height points',14,0,99);
+	terrainInputList.addField('number','Max height',100,0,500);
+	terrainInputList.addField('number','Min height',-100,-500,0);	
+	
+	
+	var span = createElement('p');		
+	span.innerHTML = 'Increase height points to make terrain more complicated. ';
+	span.innerHTML +='Making max and min height closer to each other will make the terrain have smaller mountains. ';
+	span.innerHTML +='Base height defines the general height of the terrain. ';
+	terrainMenu.obj.appendChild(span);
+	
+	terrainMenu.addButton('Close',function(){menuHandler.closeMenu();});
+	
+	
+	ammoMenu = new Menu();
+	ammoMenu.obj.id = 'ammoMenu';
+	img = new Image();
+	img.src = 'ammo.png';
+	ammoMenu.obj.appendChild(img);
+	ammoInputList = new InputList(-1,-1);
+	ammoInputList.showButtons = false;
+	ammoInputList.appendTo(ammoMenu.obj);	
+	ammoInputList.addField('number','Mininuke',5,0,999);
+	ammoInputList.addField('number','Big nuke',2,0,999);
+	ammoInputList.addField('number','MIRV',5,0,999);
+	ammoInputList.addField('number','Teleport',2,0,999);
+	ammoInputList.addField('number','Sand Eater',5,0,999);
+	ammoInputList.addField('number','Artillery',5,0,999);	
+	ammoInputList.addField('number','Bomber',5,0,999);		
+	
+	ammoMenu.addButton('Close',function(){menuHandler.closeMenu();});
+	
+	var ammo = new Array(
+			0,0,0,0,0,0,0
+		);
+	
+	for(var i = 0, l = ammo.length; i < l; i++)
+	{
+		if(ammo[i] != '' && !isNaN(ammo[i]))
+			ammoInputList.inputs[i].value = ammo[i];
+	}
+	
+	
+	
+	
+	mpMenu = new Menu();
+	mpMenu.obj.innerHTML = '';
+	
+	weaponMenu = new Menu();
+	img = new Image();
+	img.src = 'weapons.png';
+	weaponMenu.obj.appendChild(img);
+	weaponMenu.obj.id = 'weaponMenu';
+	
+	menuHandler.showMenu(mainMenu);		
+	
+	//Create weapon menu
+	weaponSelect = new Selector(weaponMenu.obj,selectWeapon);
+	
+	var item = new Image();
+	item.src = 'cannon.png';	
+	weaponSelect.addItem(item,'cannon');
+		
+	item = new Image();
+	item.src = 'mininuke.png';
+	weaponSelect.addItem(item,'mininuke');
+	
+	item = new Image();	
+	item.src = 'bignuke.png';
+	weaponSelect.addItem(item,'bignuke');
+	
+	item = new Image();	
+	item.src = 'mirv.png';
+	weaponSelect.addItem(item,'mirv');
+		
+	item = new Image();	
+	item.src = 'teleport.png';
+	weaponSelect.addItem(item,'teleport');
+		
+	item = new Image();
+	item.src = 'sandeater.png';
+	weaponSelect.addItem(item,'sandeater');
+	
+	item = new Image();
+	item.src = 'artillery.png';
+	weaponSelect.addItem(item,'artillery');
+	
+	item = new Image();
+	item.src = 'bomber.png';
+	weaponSelect.addItem(item,'bomber');
+	
+	//create terrain
+	terrain = TerrainCreator(ctx);
+		
+		
+	
+	//init physics engine
+	engine = new Engine();
+	windIndicator = new WindIndicator();
+		
+	
+	draw();	
+}
+
+function setWidgetWidth()
+{
+	var w = widgetWidthSelect.value;
+	var h = 477;
+	//var h = 500;
+	
+	if(w < 302)	
+		w = 302;		
+	else if(w > 1002)
+		w = 1002;
+		
+	//Reduce widget height if there is no scrollbar
+	if(w == 1002)
+		h = 461;
+	
+	widgetW = w;
+	widgetH = h;
+	$('canvasContainer').style.width = (w-2)+'px';
+	$('showMessage').style.width = (w-2)+'px';
+	$('windContainer').style.width= (w-2)+'px';
+}
+
+function initAI()
+{
+	AIready = true;	
+}
+
+function startGame(etype)
+{
+	var plrs = playersInputList.getValues();
+	players = new Array();
+	deadPlayers = new Array();
+	
+	var ammo = ammoInputList.getValues();
+	
+	for(var i = 0, l = plrs.length; i < l; i++)
+	{
+		var p;
+		var name = (plrs[i][0].length > 0) ? plrs[i][0] : 'Player '+(i+1);
+		if(plrs[i][1] == 'Human')
+		{			
+			p = new HumanPlayer(name);
+		}
+		else if(plrs[i][1] == 'Computer')
+		{			
+			if(!AIready)
+				initAI();
+				
+			p = new ComputerPlayer(name);
+		}
+				
+		p.weapons.mininuke.ammo = ammo[0];
+		p.weapons.bignuke.ammo = ammo[1];
+		p.weapons.mirv.ammo = ammo[2];
+		p.weapons.teleport.ammo = ammo[3];
+		p.weapons.sandeater.ammo = ammo[4];
+		
+		
+		var t = new Tank(new Point(Random(10,canvasW-10),1));
+		var waste = '';
+		for(var sleep = 0; sleep < 1000; sleep++)
+		{
+			waste += sleep;
+			//Waste some time to make random more random
+		}
+		p.setTank(t);
+		players.push(p);
+		
+	}
+	menuHandler.getOpenMenu().hide();
+		
+	engine.changeWind();
+	windIndicator.value = engine.wind;
+	draw();
+
+	players[0].startTurn();
+	prevState = gameState;
+	weaponSelect.select(curPlayer.weaponName);	
+}
+
+function endGame()
+{			
+	showMessage(players[0].name + ' wins!',5000,'menuHandler.getOpenMenu().show()');	
+}
+
+function nextPlayer()
+{
+	var pcount = players.length;
+	if(pcount < 2)
+	{
+		gameState = states.wait;
+		endGame();
+	}
+	else
+	{
+		for(var i = 0; i < pcount; i++)
+		{
+			var p = players[i];
+			if(p.tank.health <= 0)
+			{
+				showMessage(p.name + ' is dead!',2000,nextPlayer);
+				p.die();
+				players.remove(p);
+				deadPlayers.push(p);
+				return;
+			}
+		}
+	
+		engine.changeWind();
+		windIndicator.value = engine.wind;
+		draw();
+		terrain.createPath(ctx);
+		
+		var plrIndex = players.find(curPlayer);
+		plrIndex++;
+		if(plrIndex == players.length)
+			plrIndex = 0;
+		
+		players[plrIndex].startTurn();
+		
+		weaponSelect.select(curPlayer.weaponName);
+		$('weaponDisplay').innerHTML = curPlayer.weaponName + ' (' + curPlayer.selectedWeapon.ammo +' left)';
+	}
+}
+
+
+
+function Engine()
+{
+	var clock = null;
+	var timer = null;
+	var interval = 10;
+	var gravity = 1;
+	
+	var maxWind = 0.2;
+	var minWind = -0.2;
+	var that = this;
+	this.wind = 0;
+	this.running = false;
+	
+	var objects = new Array();
+	
+	this.addObject = function(o)
+	{
+		objects.push(o);		
+	}
+	
+	this.onstop = null;
+	
+	this.addShell = function(origin,angle,power)
+	{
+		var v1 = new Vector2(origin.x,origin.y);
+		
+		var xv = Math.cos(angle) * power;
+		var yv = Math.sin(angle) * power;
+		
+		var v2 = new Vector2(xv,yv);
+		
+		var s = new Shell(v1,v2,10);		
+		
+		objects.push(s);
+	}
+	
+	this.start = function()
+	{
+		timer = setInterval(this.work,interval);
+		clock = new FrameTimer();
+		clock.tick();
+		that.running = true;
+	}
+	
+	this.changeWind = function()
+	{		
+		this.wind = Random(minWind,maxWind);
+	}
+	
+	this.work = function()
+	{				
+		var dead = new Array();
+		var o;
+		var timeStep = clock.getSeconds();
+		
+		for(var i = 0, l = objects.length; i < l; i++)
+		{
+			o = objects[i];
+			o.velocity.y += gravity + o.weight;
+			
+			if(o instanceof Tank)
+				o.velocity.x += engine.wind / 2;
+			else
+				o.velocity.x += engine.wind;
+			
+			//used for drawing
+			oldPosition = new Vector2(o.position.x,o.position.y);
+			
+			//o.position = o.position.sum(o.velocity);//.scalarMultiply(timeStep);
+			o.position.x += o.velocity.x * timeStep;
+			o.position.y += o.velocity.y * timeStep;			
+			
+			var pcount = players.length;
+			
+			terrain.createPath(ctx);		
+				
+			if(o instanceof Shell)
+			{
+				if(o.hasLife)
+				{
+					o.life -= timeStep;
+					if(o.life < 0)
+					{
+						o.hitGround();
+						dead.push(o);
+					}
+				}
+				
+				if((!ctx.isPointInPath(o.position.x, o.position.y) && o.position.y > 0) ||
+					(o.position.x < 0 || o.position.x > canvasW || o.position.y > canvasH))
+				{
+					ctx.save();
+					
+					ctx.beginPath();
+					ctx.moveTo(o.position.x,o.position.y);				
+					ctx.arc(o.position.x,o.position.y,o.radius,0,PI2,false);
+					ctx.fillStyle = 'yellow';
+					ctx.closePath();
+					ctx.fill();
+					ctx.restore();
+									
+					//Network player hits won't do any damage to tanks or ground.
+					//They will be synced from the server afterwards.		
+					if(o.shooter instanceof NetworkPlayer)
+					{
+						if(o.hitGround && o.type != 'teleport')
+							o.hitGround();
+							
+						dead.push(o);						
+					}
+					else
+					{
+					
+						terrain.destroy(
+							new Point(o.position),
+							o.radius
+							);
+						if(o.hitGround)
+							o.hitGround();
+						
+						//opera.postError('engine lasthit path '+myname);
+						terrain.createLastHitPath(ctx);
+						for(var i2 = 0; i2 < pcount; i2++)
+						{
+							var tank = players[i2].tank;						
+							
+							if(ctx.isPointInPath(tank.position.x,tank.position.y))
+							{
+								objects.push(tank);
+								tank.health -= o.damage;
+								
+							}
+							else if(tank.checkRadius(gctx))
+							{
+								objects.push(tank);
+								tank.health -= o.damage;
+								
+							}
+						}					
+					
+						dead.push(o);
+						
+						if(server)
+						{							
+							server.addImpact(o.position.x,o.position.y,o.radius,o.damage,o.type,o.shooter.name);
+						}
+					}
+				}
+				else
+				{
+					for(var i2 = 0; i2 < pcount; i2++)
+					{
+						//Don't do hitbox checks on own tank
+						if(players[i2] == curPlayer)
+							continue;
+							
+						var tank = players[i2].tank;
+						tank.createHitbox(ctx);
+						if(ctx.isPointInPath(o.position.x,o.position.y))
+						{
+							if(o.hitTank)
+								o.hitTank(tank);
+							
+							//Network player hits won't do any damage to tanks or ground.
+							//They will be synced from the server afterwards.		
+							if(o.shooter instanceof NetworkPlayer)
+							{
+								dead.push(o);								
+							}
+							else
+							{
+								terrain.destroy(
+									new Point(o.position),
+									o.radius
+									);
+								objects.push(tank);
+								tank.health -= o.damage;
+								
+								dead.push(o);
+							
+								if(server)
+								{									
+									server.addImpact(o.position.x,o.position.y,o.radius,o.damage,o.type,o.shooter.name);
+								}
+							}						
+						}
+					}
+				}
+				
+				//Draw shell path
+				ctx.beginPath();
+				ctx.moveTo(oldPosition.x,oldPosition.y);
+				ctx.strokeStyle = 'red';				
+				ctx.lineTo(o.position.x,o.position.y);
+				ctx.stroke();
+				ctx.closePath();
+			}			
+								
+			
+			if(o instanceof Tank)
+			{				
+				if((!ctx.isPointInPath(o.position.x,o.position.y) || o.position.y > canvasH) && o.position.y > 0)
+					dead.push(o);
+				draw();
+			}			
+			
+						
+						
+		}
+		
+		for(var i = 0, l = dead.length; i < l; i++)
+		{
+			dead[i].velocity = new Vector2(0,0);
+			objects.remove(dead[i]);
+		}
+		
+		
+		if(objects.length == 0)
+			engine.stop();
+		else
+			clock.tick();
+	}
+	
+	this.stop = function()
+	{		
+		clock = null;
+		clearInterval(timer);
+		timer = null;
+		curPlayer.endTurn();
+		that.running = false;
+		if(that.onstop)		
+			that.onstop();
+	}
+}
+
+function canvasMouseMove(e)
+{
+	if(e.offsetX) {
+		mouseX = e.offsetX;
+		mouseY = e.offsetY;
+	}
+	else {
+		mouseX = e.layerX;
+		mouseY = e.layerY;
+	}
+	
+	//Something goes wrong sometimes so try to fix it =)
+	if(isNaN(mouseX)) {
+		mouseX = 0;
+	}
+
+	if(isNaN(mouseY)) {
+		mouseY = 0;
+	}
+
+	if(gameState == states.play)
+	{
+		//In play state, show angle and power
+
+		
+		var ady = mouseY-50;
+		var pdy = mouseY-30
+		if((ady-10) < 0)
+		{
+			ady = mouseY+30;
+			pdy = mouseY+50;
+		}
+		var dx = e.clientX - 20;
+		if(dx < 0)
+			dx = e.clientX + 20;
+			
+		if((dx+70) > widgetW)
+			dx -= 40;		
+		
+		//Move the power/angle displays next to the mouse
+		$('angleDiv').setAttribute('style','left:'+dx+'px;top:'+ady+'px');
+		$('powerDiv').setAttribute('style','left:'+dx+'px;top:'+pdy+'px');		
+		
+		var p = curPlayer.tank.position;
+				
+		var angle = Math.atan2(-(p.y-mouseY),-(p.x-mouseX));
+		if(angle > 0)
+			return;
+		
+		var v1 = new Vector2(p.x,p.y);
+		var v2 = new Vector2(mouseX,mouseY);		 
+		
+		//divide power by 10 to make the number look better
+		var power = Math.round(v1.subtract(v2).getLength()) / 10;
+		
+		
+		$('powerDisplay').innerHTML = power;
+		//Display angle in degrees instead of radians.
+		//180 is added to get rid of negative angles
+		$('angleDisplay').innerHTML = Math.round(radToDeg(angle))+180;
+		
+		curPlayer.tank.turretAngle = angle;
+		curPlayer.tank.draw(ctx);
+		//draw();		
+	}
+}
+
+function canvasClick(e)
+{
+	if(gameState == states.play)
+		curPlayer.shoot();	
+}
+
+function showWeaponMenu()
+{
+	if(gameState == states.play)
+	{
+		prevState = gameState;
+		gameState = states.wait;
+		weaponMenu.show();
+	}
+}
+
+function selectWeapon()
+{
+	/*if(gameState != states.play)
+		return;*/
+				
+	if(!curPlayer.changeWeapon(weaponSelect.value))
+	{		
+		weaponSelect.selectDefault();
+		showMessage('Out of ammo',2000);
+	}
+	else
+	{
+		$('weaponDisplay').innerHTML = curPlayer.weaponName + ' (' + curPlayer.selectedWeapon.ammo +' left)';
+	}
+	gameState = prevState;
+	weaponMenu.remove();
+}
+
+var texts = new Array();
+function draw()
+{	
+	terrain.draw(ctx);
+	var px = new PixelText('aaaaa');
+	px.color = 'black';
+	for(var i = 0, l = players.length; i < l; i++)
+	{
+		if(server) {
+			if(server.players[i].tank) {
+				server.players[i].tank.draw(ctx);
+			}
+		}
+		else
+			players[i].tank.draw(ctx);
+			
+		if(!players[i].tank || isNaN(players[i].tank.health)) {
+			continue;
+		}
+			
+		
+		ctx.save();
+		
+		px.text = String(players[i].tank.health);
+		var w = px.getWidth();
+		
+		ctx.save();
+		ctx.translate(players[i].tank.position.x-w,players[i].tank.position.y-30);		
+		ctx.scale(2,2);				
+		px.draw(ctx);
+		ctx.restore();
+		
+		px.text = players[i].name.toLowerCase();		
+		w = px.getWidth();
+		ctx.save();
+		ctx.translate(players[i].tank.position.x-w,players[i].tank.position.y-45);
+		ctx.scale(2,2);		
+		px.draw(ctx);
+		ctx.restore();
+		
+		ctx.restore();
+	}
+	
+	for(var i = 0, l = deadPlayers.length; i < l; i++)
+	{
+		deadPlayers[i].tank.draw(ctx);
+	}
+	
+	var ic = document.createElement('canvas');
+	ic.setAttribute('style','width: 40px;height:20px');
+	ic.width=40;
+	ic.height=20;
+	var ictx = ic.getContext('2d');
+	ictx.fillStyle=terrain.clearColor;	
+	ictx.fillRect(0,0,40,20);	
+	windIndicator.draw(ictx);
+	windImage.src = ic.toDataURL();
+}
+
+
+function displayHitQuote(tank)
+{	
+	texts.push(
+		{
+			text: randomHitQuote(),
+			x: tank.position.x,
+			y: tank.position.y-70
+		}
+	);
+	
+	setTimeout('texts = new Array()',5000);
+}
+
+function WindIndicator()
+{
+	//this.position = new Point(100,20);
+	this.position = new Point(20,0);
+	this.value = 0;
+	
+	this.draw = function(c)
+	{
+		var x = this.position.x;
+		var y = this.position.y;
+		
+		c.beginPath();
+		c.moveTo(x,y);
+		c.lineTo(x+(this.value*50),y+5);
+		c.lineTo(x,y+10);
+		c.closePath();
+		c.fillStyle = 'red';
+		c.fill();
+		
+	}
+}
+
+
+function Tank(pos)
+{
+	this.position = new Vector2(pos.x,pos.y);
+	this.velocity = new Vector2(0,0);
+	this.turretAngle = 0;
+	this.shotPower = 5;
+	this.health = 100;
+	this.weight = 2;
+	
+	this.healthObj = new PixelText(this.health);
+	this.healthObj.color = 'black';
+	
+	var corners = new Array(
+			new Point(this.position.x-7,this.position.y-8),
+			new Point(this.position.x+14,this.position.y-8),
+			new Point(this.position.x-7,this.position.y+8),
+			new Point(this.position.x+14,this.position.y+8)
+		);
+	
+	var prevDrawAngle = 0;
+	
+	this.destroy = function()
+	{		
+		this.health = ' ';
+		draw();
+	}
+	
+	this.fire = function(c)
+	{
+		c.save();
+		c.translate(this.position.x,this.position.y-8);		
+		
+		var xv = Math.cos(this.turretAngle) * 10;
+		var yv = Math.sin(this.turretAngle) * 10;
+		c.translate(xv,yv);
+		
+		c.rotate(this.turretAngle);
+		
+		c.fillStyle = 'yellow';
+				
+		c.moveTo(0,0);
+		c.beginPath();
+		c.moveTo(0,0);
+		c.lineTo(5,-5);
+		c.lineTo(20,0);
+		c.lineTo(5,5);
+		c.lineTo(0,0);
+		c.closePath();
+		c.fill();
+		
+		c.moveTo(0,0);
+		c.beginPath();
+		c.moveTo(0,0);
+		c.lineTo(-2,15);
+		c.lineTo(2,0);
+		c.lineTo(-2,-15);
+		c.lineTo(0,0);
+		c.closePath();
+		c.fill();
+		
+		c.restore();
+	}
+	
+	this.draw = function(c)
+	{
+		c.save();
+		
+		//Draw the bottom of the tank
+		c.translate(this.position.x,this.position.y);
+				
+		c.fillStyle = 'black';
+		
+		c.fillRect(-7,-8,14,8)
+		
+		c.translate(0,-8);
+		
+		//Clear previous position of turret
+		c.save();
+		c.rotate(prevDrawAngle);
+		c.fillStyle = terrain.clearColor;
+		c.fillRect(0,-2,11,4);
+		c.restore();
+				
+		if(this.health != ' ')
+		{
+			//Draw the cannon
+			c.save();
+			c.fillStyle = 'black';
+			c.rotate(this.turretAngle);
+			c.fillRect(0,-1,10,2);
+			c.restore();		
+		
+			prevDrawAngle = this.turretAngle;
+		}
+		
+		//Draw the turret top
+		c.moveTo(0,0);
+		c.beginPath();
+		c.moveTo(0,0);
+		if(this.health == ' ')
+			c.fillStyle = terrain.clearColor;
+		else
+			c.fillStyle = 'black';
+			
+		c.arc(0,0,5,0,PI2,false);
+		c.closePath();
+		c.moveTo(0,0);
+		c.fill();
+		
+		c.restore();
+	}
+	
+	this.checkRadius = function()
+	{		
+		for(var i = 0; i < 4; i++)
+		{
+			if(ctx.isPointInPath(corners[i].x,corners[i].y))			
+				return true;			
+		}
+		
+		return false;
+	}
+	
+	this.checkHit = function(x,y)
+	{
+		var w = tankSprite.width/2;
+		var h = tankSprite.height;
+		
+		var x1 = this.position.x - w;
+		var x2 = this.position.x + w;
+		
+		var y1 = this.position.y - h;
+		var y1 = this.position.y;
+		
+		if(x > x1 && x < x2)
+		{
+			if(y > y1 && y < y2)
+				return true;
+		}
+		
+		return false;
+	}
+	
+	this.createHitbox = function(c)
+	{
+		c.beginPath();
+		
+		c.rect(this.position.x-7,this.position.y-10,14,10)
+		
+		c.closePath();
+	}
+}
+
+</script>
+	</head>
+	<body>	
+	<div id="canvasContainer">
+		<canvas width="1000" height="400"></canvas>
+	</div>	
+	<div id="controls" style="width: 150px;display:inline-block">
+		<span id="weaponDisplay">cannon (999 left)</span><br />
+		<input type="button" value="Change weapon" onclick="showWeaponMenu()" style="margin: 5px 0 0 0;display:inline" />		
+	</div>	
+	<div id="angleDiv"><label>A:</label> <span id="angleDisplay">000</span></div>
+	<div id="powerDiv"><label>P:</label> <span id="powerDisplay">00.0</span></div>
+	<div id="windContainer"></div>	
+	<div id="showMessage"></div>
+	<div id="log">&nbsp;</div>	
+	</body>
+</html>

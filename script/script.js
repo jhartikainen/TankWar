@@ -29,11 +29,18 @@ var TankWarApp = SSEApplication.extend({
 	 */
 	_games: [],
 
+	/**
+	 * List of games that aren't full yet
+	 * @type {Array}
+	 */
+	_availableGames: [],
+
 	init: function() {
 		this._lobby = new ChatRoom();
 
 		//Initialize games so that it won't become a static variable
 		this._games = [];
+		this._availableGames = [];
 	},
 
 	_handlers: {
@@ -116,6 +123,7 @@ var TankWarApp = SSEApplication.extend({
 
 			var game = new TankWarGame(client.name, playerCount, password);
 			game.join(client);
+			this._availableGames.push(game);
 			this._games.push(game);
 
 			client.send('gamehosted', 'ok');
@@ -137,15 +145,16 @@ var TankWarApp = SSEApplication.extend({
 			}
 
 			//Find correct game by name and password
-			for(var i = 0, len = this._games.length; i < len; i++) {
-				var game = this._games[i];
+			for(var i = 0, len = this._availableGames.length; i < len; i++) {
+				var game = this._availableGames[i];
 				if(game.getName() == gameName && password == game.getPassword()) {
 					this._lobby.part(client);
+					opera.postError('joining player to game');
 					game.join(client);
 
 					//If game became full, send rooms again to refresh this one out
 					if(game.isFull()) {
-						this._games.splice(i, 1);
+						this._availableGames.splice(i, 1);
 						this._broadcastRooms();
 					}
 
@@ -328,7 +337,7 @@ var TankWarApp = SSEApplication.extend({
 	},
 
 	_broadcastRooms: function() {
-		var gameNames = this._games.map(function(game){
+		var gameNames = this._availableGames.map(function(game){
 			return game.getName();
 		});
 		this.broadcast('rooms', gameNames);
@@ -489,6 +498,8 @@ var TankWarGame = ChatRoom.extend({
 	 * @param {String} password Optional
 	 */
 	init: function(name, maxPlayers, password) {
+		this._clients = [];
+
 		if(maxPlayers < 2 || 8 < maxPlayers) {
 			maxPlayers = 2;
 		}
@@ -497,6 +508,9 @@ var TankWarGame = ChatRoom.extend({
 		this._maxPlayers = maxPlayers;
 		this._password = password || '';
 		this._waitingList = [];
+		this._map = [];
+		this._weapons = [];
+		this._tanks = [];
 	},
 
 	isFull: function() {
@@ -524,11 +538,11 @@ var TankWarGame = ChatRoom.extend({
 
 		this.broadcastToAllExcept(client, 'gamejoin', client.name);
 
-		if(this._map) {
+		if(this._map.length > 0) {
 			client.send('map', this._map);
 		}
 
-		if(this._weapons) {
+		if(this._weapons.length > 0) {
 			client.send('weapons', this._weapons);
 		}
 
@@ -659,6 +673,7 @@ var TankWarGame = ChatRoom.extend({
 	},
 
 	_start: function() {
+		opera.postError('Starting game');
 		this._clients[0].send('startgame', 'ok');
 		this._currentPlayer = -1;
 	}

@@ -439,7 +439,17 @@ function cometdHandler(e) {
 		var messages = bayeux.Message.fromJson(decodeURIComponent(req.bodyItems['message'][0]));
 	}
 	else {
-		var messages = bayeux.Message.fromJson(req.body);
+		var body = req.body;
+		if(body.indexOf('message=') == 0) {
+			body = body.substr(8);
+		}
+		try {
+			var messages = bayeux.Message.fromJson(decodeURIComponent(body));
+		}
+		catch(ex) {
+			opera.postError('JSON parse failed: ');
+			opera.postError(body);
+		}
 	}
 	var responseMessage = cometd.processMessage(messages[0]);
 	var testMsg = new bayeux.Message({

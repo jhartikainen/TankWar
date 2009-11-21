@@ -114,7 +114,7 @@ function createLobbyMenu()
 	var m = createElement('div','chatHolder','float');
 	m.appendChild(createElement('div','chat'));
 	
-	var i = createElement('input','message','','width:120px');
+	var i = createElement('input','message','','');
 	i.onkeyup = keyUp;
 	m.appendChild(i);
 	
@@ -299,8 +299,9 @@ function passwordJoin()
 
 function createGame()
 {
-	if(myname != '')
+	if(myname != '') {
 		menuHandler.showMenu(createGameMenu);
+	}
 }
 
 function hostMPGame()

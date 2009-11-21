@@ -170,13 +170,10 @@ var TankWarApp = SSEApplication.extend({
 		 * Client leaves a game
 		 */
 		leavegame: function(client, request) {
-			var game = this.findRoomByClient(client);
-			if(game instanceof TankWarGame) {
-				//Remove client from game and put them back to lobby
-				game.part(client);
-				this._lobby.join(client);
-				client.send('gameleft', 'ok');
-			}
+			//Remove client from game and put them back to lobby
+			this._removeClientFromRoom(client);
+			this._lobby.join(client);
+			client.send('gameleft', 'ok');
 		},
 
 		/**
@@ -364,8 +361,32 @@ var TankWarApp = SSEApplication.extend({
 
 	_clientDisconnected: function(client) {
 		var room = this.findRoomByClient(client);
-		if(room) {
+		if(room == this._lobby) {
+			this._lobby.part(client);
+		}
+		else {
+			this._removeClientFromRoom(client);
+		}
+	},
+
+	_removeClientFromRoom: function(client) {
+		var room = this.findRoomByClient(client);
+		if(room && room != this._lobby) {
 			room.part(client);
+
+			if(room.isEmpty()) {
+				var index = this._games.indexOf(room);
+				if(index !== -1) {
+					this._games.splice(index, 1);
+				}
+
+				index = this._availableGames.indexOf(room);
+				if(index !== -1) {
+					this._availableGames.splice(index, 1);
+				}
+
+				this._broadcastRooms();
+			}
 		}
 	},
 
@@ -515,6 +536,10 @@ var TankWarGame = ChatRoom.extend({
 
 	isFull: function() {
 		return this._clients.length == this._maxPlayers;
+	},
+
+	isEmpty: function() {
+		return this._clients.length == 0;
 	},
 	
 	getName: function() {

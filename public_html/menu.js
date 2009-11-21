@@ -64,8 +64,8 @@ function Menu(clazz)
 			document.body.appendChild(this.obj);
 			inDocument = true;
 		}		
-		else	
-			this.obj.style.display = 'block';		
+
+		this.obj.style.display = 'block';		
 	}
 	
 	this.hide = function()

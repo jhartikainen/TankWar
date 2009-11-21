@@ -407,12 +407,53 @@ window.onload = function () {
 
 		//This is our SSE Endpoint so we want to make the SSE server handle this
         webserver.addEventListener('sseunite', app.createRequestHandler(), false);
+
+		webserver.addEventListener('cometd', cometdHandler, false);
     }
 
 	//This is so that the server checks if a connection has died and cleans it up
 	setInterval(function() {
 		app.cleanDeadConnections();	
 	}, 30000);
+}
+
+var cometd = new bayeux.CometdServer();
+function cometdHandler(e) {
+	var conn = e.connection;
+	var req = conn.request;
+	var response = conn.response;
+
+	opera.postError('METHOD: ' + req.method);
+	opera.postError('BODY: ' + req.body);
+	opera.postError('GET: ');
+	for(var k in req.queryItems) {
+		opera.postError(k + ': ' + decodeURIComponent(req.queryItems[k][0]));
+	}
+
+	opera.postError('POST: ');
+	for(var k in req.bodyItems) {
+		opera.postError(k + ': ' + decodeURIComponent(req.bodyItems[k][0]));
+	}
+
+	if(!req.body) {
+		var messages = bayeux.Message.fromJson(decodeURIComponent(req.bodyItems['message'][0]));
+	}
+	else {
+		var messages = bayeux.Message.fromJson(req.body);
+	}
+	var responseMessage = cometd.processMessage(messages[0]);
+	var testMsg = new bayeux.Message({
+		channel: '/demo',
+		data: 'moi'
+	});
+	var responseData = '[' + responseMessage.toJson() + ']';
+	opera.postError(responseData);
+
+	response.setResponseHeader('Content-Type', 'application/json');
+	response.flush();
+	response.write(responseData);
+	response.flush();
+	response.close();
 }
 
 function gameLoader(e)
@@ -426,7 +467,6 @@ function gameLoader(e)
     opera.postError('foo');
     response.close();
 }
-
 
 /**
  * Basic type of chatroom with join/part functionality

@@ -417,7 +417,11 @@ window.onload = function () {
 	}, 30000);
 }
 
+var testChannel = new bayeux.Channel();
+
 var cometd = new bayeux.CometdServer();
+cometd.registerChannel('demo', testChannel);
+
 function cometdHandler(e) {
 	var conn = e.connection;
 	var req = conn.request;
@@ -435,23 +439,9 @@ function cometdHandler(e) {
 		opera.postError(k + ': ' + decodeURIComponent(req.bodyItems[k][0]));
 	}
 
-	if(!req.body) {
-		var messages = bayeux.Message.fromJson(decodeURIComponent(req.bodyItems['message'][0]));
-	}
-	else {
-		var body = req.body;
-		if(body.indexOf('message=') == 0) {
-			body = body.substr(8);
-		}
-		try {
-			var messages = bayeux.Message.fromJson(decodeURIComponent(body));
-		}
-		catch(ex) {
-			opera.postError('JSON parse failed: ');
-			opera.postError(body);
-		}
-	}
-	var responseMessage = cometd.processMessage(messages[0]);
+	var conn = new bayeux.UniteConnection(conn);
+	cometd.newConnection(conn);
+	/*var responseMessage = cometd.processMessage(messages[0]);
 	var testMsg = new bayeux.Message({
 		channel: '/demo',
 		data: 'moi'
@@ -463,7 +453,7 @@ function cometdHandler(e) {
 	response.flush();
 	response.write(responseData);
 	response.flush();
-	response.close();
+	response.close();*/
 }
 
 function gameLoader(e)

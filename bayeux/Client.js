@@ -26,6 +26,14 @@ bayeux.Client.prototype = {
 	},
 
 	/**
+	 * Return amount of messages queued for this client
+	 * @return {Number}
+	 */
+	getQueueLength: function() {
+		return this._messageQueue.length;
+	},
+
+	/**
 	 * Attempts to flush messages through a connection
 	 */
 	flushMessages: function() {

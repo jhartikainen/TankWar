@@ -413,14 +413,24 @@ window.onload = function () {
 
 	//This is so that the server checks if a connection has died and cleans it up
 	setInterval(function() {
-		app.cleanDeadConnections();	
-	}, 30000);
+		cometd.sendQueuedMessages();
+	}, 1000);
 }
 
-var testChannel = new bayeux.Channel();
+var tankwarChannel = new bayeux.Channel();
+tankwarChannel.publish = function(event, data) {
+	var message = new bayeux.Message({
+		channel: '/tankwar/' + event,
+		data: data
+	});
+
+	this._subscribers.forEach(function(c) {
+		c.queueMessage(message);
+	});
+};
 
 var cometd = new bayeux.CometdServer();
-cometd.registerChannel('demo', testChannel);
+cometd.registerChannel('tankwar', tankwarChannel);
 
 function cometdHandler(e) {
 	var conn = e.connection;

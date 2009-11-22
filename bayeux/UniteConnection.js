@@ -31,7 +31,9 @@ bayeux.UniteConnection.prototype = {
 			return message.toJson();
 		});
 
-		response.write('[' + jsonData.join(',') + ']');
+		var responseData = '[' + jsonData.join(',') + ']';
+		opera.postError('Sending: ' + responseData);
+		response.write(responseData);
 		response.flush();
 		response.close();
 	},

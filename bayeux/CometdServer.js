@@ -74,6 +74,7 @@ bayeux.CometdServer.prototype = {
 	sendQueuedMessages: function() {
 		this._clients.forEach(function(client){
 			if(client.getQueueLength() > 1) {
+				opera.postError('Flushing...');
 				client.flushMessages();
 			}
 		});

@@ -28,8 +28,9 @@ function initMP()
 	createGameMenu.addButton('Cancel','menuHandler.closeMenu()');
 	
 	server = new Server();	
-	initEventSource();
-	
+
+	dojox.cometd.init('/tankwar/cometd');
+	dojox.cometd.subscribe('/tankwar/*', handleCometEvent);
 }
 
 function createPasswordMenu()
@@ -55,12 +56,9 @@ function createPasswordMenu()
 
 function createLobbyMenu()
 {
-	var s = '<event-source src="'+requestPath+'" id="events">';
-	
 	//var d = createElement('div','lobby');
 	var d = mpMenu.obj;
 	d.id = 'lobby';
-	d.innerHTML = s;
 	
 	var top = createElement('div','lobbyTop');
 	var msg = createElement('span','lobbyMessage');
@@ -167,6 +165,10 @@ function initEventSource()
 	es.addEventListener('wind',server.gotWind,false);
 	es.addEventListener('health',server.gotHealth,false);
 	es.addEventListener('positions',server.gotPositions,false);
+}
+
+function handleCometEvent(message) {
+	console.dir(message);
 }
 
 function leaveOnline()

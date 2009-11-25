@@ -13,416 +13,348 @@ function sanitize(str) {
 	return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/**
- * Main tankwar application class
- */
-var TankWarApp = SSEApplication.extend({
-	/**
-	 * Online lobby chat
-	 * @type {ChatRoom}
-	 */
-	_lobby: null,
+var webserver, cometd;
+window.onload = function () {
+    webserver = opera.io.webserver
 
-	/**
-	 * List of games
-	 * @type {Array}
-	 */
-	_games: [],
-
-	/**
-	 * List of games that aren't full yet
-	 * @type {Array}
-	 */
-	_availableGames: [],
-
-	init: function() {
-		this._lobby = new ChatRoom();
-
-		//Initialize games so that it won't become a static variable
-		this._games = [];
-		this._availableGames = [];
-	},
-
-	_handlers: {
-		/**
-		 * Client sends their name. Should usually be first ajax request
-		 */
-		name: function(client, message) {
-			if(client.name) {
-				//If the client already has a name this is an invalid request
-				return;
-			}
-
-			var name = sanitize(decodeURIComponent(message.data.name));
-
-			//Name must only contain alphanumeric characters, underlines and spaces
-			if(name.match(/[^A-Za-z0-9_ ]/)) {
-				client.queueMessage(new bayeux.Message({
-					channel: '/tankwar/nameerror',
-				    data: 'Your name contains invalid characters. Try again.'
-				}));
-				return;
-			}
-
-			if(this.findClientByName(name)) {
-				client.queueMessage(new bayeux.Message({
-					channel: '/tankwar/nameerror',
-				    data: 'Name already in use. Choose another.'
-				}));
-				return;
-			}
-
-			client.name = name;
-			client.queueMessage(new bayeux.Message({
-				channel: '/tankwar/system',
-			    data: 'Message of the Day: Welcome to TankWar on Unite!'
-			}));
-
-			this._broadcastRooms();
-			
-			//All clients are joined to the main lobby by default
-			this._lobby.join(client);
-		},
-
-		/**
-		 * Client sends a chat message
-		 */
-		say: function(client, message) {
-			var msg = sanitize(decodeURIComponent(message.data.msg));
-			if(!message.data.private) {
-				//Determine the correct room to send the message to
-				var room = this.findRoomByClient(client);
-				if(!room) {
-					opera.postError('Client ' + client.name + ' is not in a room and is chatting');
-					return;
-				}
-
-				room.broadcast('chat', [client.name, msg]);
-			}
-			else {
-				//This is a private message so send it directly to target
-				var target = decodeURIComponent(message.data.private);
-				var targetClient = this.findClientByName(target);
-				targetClient.queueMessage(new bayeux.Message({
-					channel: '/tankwar/chat', 
-					data: [client.name + ' (private)', msg]
-				}));
-				
-				//Send also to sender so they see it was actually sent
-				client.queueMessage(new bayeux.Message({
-					channel: '/tankwar/chat', 
-					data: [client.name + ' to ' + targetClient.name + ' (private)', msg]
-				}));
-			}
-		},
-
-		/**
-		 * Client hosts a game
-		 */
-		hostgame: function(client, message) {
-			var playerCount = parseInt(message.data.pc);
-			var password = '';
-
-			//Sanitize value to allowed range
-			if(playerCount < 2 || playerCount > 8) {
-				playerCount = 2;
-			}
-
-			//If password is sent this game becomes password protected
-			if(message.data.pw) {
-				password = message.data.pw;
-			}
-
-			//When game is created, the client is removed from the lobby and placed into the game
-			this._lobby.part(client);
-
-			var game = new TankWarGame(client.name, playerCount, password);
-			game.join(client);
-			this._availableGames.push(game);
-			this._games.push(game);
-
-			client.queueMessage(new bayeux.Message({
-				channel: '/tankwar/gamehosted',
-			    data: 'ok'
-			}));
-			
-			//Send rooms so that people get updated about the new game
-			this._broadcastRooms();
-		},
-
-		/**
-		 * Client joins a game
-		 */
-		joingame: function(client, message) {
-			var gameName = message.data.name;
-			var password = '';
-			
-			//If client sent a password, use it
-			if(message.data.password) {
-				password = message.data.password;
-			}
-
-			//Find correct game by name and password
-			for(var i = 0, len = this._availableGames.length; i < len; i++) {
-				var game = this._availableGames[i];
-				if(game.getName() == gameName && password == game.getPassword()) {
-					this._lobby.part(client);
-					opera.postError('joining player to game');
-					game.join(client);
-
-					//If game became full, send rooms again to refresh this one out
-					if(game.isFull()) {
-						this._availableGames.splice(i, 1);
-						this._broadcastRooms();
-					}
-
-					return;
-				}
-			}
-
-			//The loop returns if game is found so this should not run if found
-			client.queueMessage(new bayeux.Message({
-				channel: '/tankwar/wrongpass',
-			    data: 'error'
-			}));
-		},
-
-		/**
-		 * Client leaves a game
-		 */
-		leavegame: function(client, request) {
-			//Remove client from game and put them back to lobby
-			this._removeClientFromRoom(client);
-			this._lobby.join(client);
-			client.queueMessage(new bayeux.Message({
-				channel: '/tankwar/gameleft',
-			    data: 'ok'
-			}));
-		},
-
-		/**
-		 * The host sent the map data for a new game
-		 */
-		map: function(client, message) {
-			if(!message.data.points) {
-				return;
-			}
-
-			var pointStr = message.data.points;
-			var game = this.findRoomByClient(client);
-			if(game instanceof TankWarGame) {
-				var points = pointStr.split(/\|/g);
-				game.setMap(points);
-			}
-		},
-
-		/**
-		 * The host sent the allowed weapons for a new game
-		 */
-		weapons: function(client, message) {
-			if(!message.data.w) {
-				return;
-			}
-
-			var pointStr = message.data.w;
-			var game = this.findRoomByClient(client);
-			if(game instanceof TankWarGame) {
-				var weapons = pointStr.split(/,/g);
-				game.setWeapons(weapons);
-			}
-		},
-
-		/**
-		 * The host placed the player tanks on the map
-		 */
-		placetanks: function(client, message) {
-			if(!message.data.points) {
-				return;
-			}
-
-			var points = message.data.points;
-			var game = this.findRoomByClient(client);
-			if(game instanceof TankWarGame) {
-				game.setTanks(points.split(/\|/g));
-			}
-		},
-
-		/**
-		 * Client finished what it was doing and is now waiting
-		 */
-		idle: function(client, request) {
-			var room = this.findRoomByClient(client);
-			if(room instanceof TankWarGame) {
-				room.setIdle(client);
-			}
-		},
-
-		/**
-		 * Client sent a wind change for a game
-		 */
-		wind: function(client, message) {
-			if(!message.data.w) {
-				return;
-			}
-
-			var wind = message.data.w;
-			var game = this.findRoomByClient(client);
-			if(game instanceof TankWarGame) {
-				game.setWind(wind);
-			}
-		},
-
-		/**
-		 * Client changed their weapon in a game
-		 */
-		changeweapon: function(client, message) {
-			if(!message.data.n) {
-				return;
-			}
-
-			var weapon = message.data.n;
-			var game = this.findRoomByClient(client);
-			if(game instanceof TankWarGame) {
-				game.changeWeapon(client, weapon);
-			}
-		},
-
-		/**
-		 * Client fired a shot in a game
-		 */
-		shoot: function(client, message) {
-			if(!message.data.a || !message.data.p) {
-				return;
-			}
-
-			var game = this.findRoomByClient(client);
-			if(game instanceof TankWarGame) {
-				var a = message.data.a;
-				var p = message.data.p;
-				game.shoot(client, a, p);
-			}
-		},
-
-		/**
-		 * Client sent impacts from shot
-		 */
-		impacts: function(client, message) {
-			if(!message.data.points) {
-				return;
-			}
-
-			var game = this.findRoomByClient(client);
-			if(game instanceof TankWarGame) {
-				var impactData = message.data.points.split(/\|/g);
-				var impacts = impactData.map(function(impact) {
-					return impact.split(/,/g);
-				});
-				game.syncImpactsFromClient(client, impacts);
-			}
-		},
-
-		/**
-		 * Client sent healths after shot
-		 */
-		health: function(client, message) {
-			if(!message.data.hp) {
-				return;
-			}
-
-			var game = this.findRoomByClient(client);
-			if(game instanceof TankWarGame) {
-				var healthData = message.data.hp.split(/\|/g);
-				var healths = healthData.map(function(health) {
-					var nameHp = health.split(/,/g);
-					return { name: nameHp[0], health: nameHp[1] };
-				});
-				game.syncHealthsFromClient(client, healths);
-			}
-		},
-
-		positions: function(client, message) {
-			if(!message.data.p) {
-				return;
-			}
-
-			var game = this.findRoomByClient(client);
-			if(game instanceof TankWarGame) {
-				var positionData = message.data.p.split(/\|/g);
-				var positions = positionData.map(function(position) {
-					var datas = position.split(/,/g);
-					return { name: datas[0], x: datas[1], y: datas[2] };
-				});
-				game.syncPositionsFromClient(client, positions);
-			}
-		}
-	},
-
-	_broadcastRooms: function() {
-		this.broadcast('rooms', gameNames);
-	},
-
-
-	_clientDisconnected: function(client) {
-		var room = this.findRoomByClient(client);
-		if(room == this._lobby) {
-			this._lobby.part(client);
-		}
-		else {
-			this._removeClientFromRoom(client);
-		}
-	},
-
-	_removeClientFromRoom: function(client) {
-		var room = this.findRoomByClient(client);
-		if(room && room != this._lobby) {
-			room.part(client);
-
-			if(room.isEmpty()) {
-				var index = this._games.indexOf(room);
-				if(index !== -1) {
-					this._games.splice(index, 1);
-				}
-
-				index = this._availableGames.indexOf(room);
-				if(index !== -1) {
-					this._availableGames.splice(index, 1);
-				}
-
-				this._broadcastRooms();
-			}
-		}
-	},
-
-	_clientConnected: function(client) {
+	cometd = new bayeux.CometdServer();
+	cometd.onClientConnect = function(client) {
 		client.queueMessage(new bayeux.Message({
 			channel: '/tankwar/system',
-		    data: 'What is your name?'
+			data: 'What is your name?'
 		}));
-	}
-});
-
-var webserver, app;
-window.onload = function () {
-	opera.postError('plonk');
-    webserver = opera.io.webserver
-	app = new TankWarApp();
+	};
+	cometd.registerChannel('tankwar', tankwarChannel);
 
     if (webserver) {
-        //The index should display the game
+        //the index should display the game
         webserver.addEventListener('_index', gameLoader, false);
 
 		webserver.addEventListener('cometd', cometdHandler, false);
     }
 
-	//This is so that the server sends any queued messages periodically
+	//this is so that the server sends any queued messages periodically
 	setInterval(function() {
 		cometd.sendQueuedMessages();
 	}, 1000);
 }
 
+//Tankwar bayeux channel
 var tankwarChannel = new bayeux.Channel();
 tankwarChannel._availableGames = [];
 tankwarChannel._games = [];
+tankwarChannel._handlers = {
+	/**
+	 * Client sends their name. Should usually be first ajax request
+	 */
+	name: function(client, message) {
+		if(client.name) {
+			//If the client already has a name this is an invalid request
+			return;
+		}
+
+		var name = sanitize(decodeURIComponent(message.data.name));
+
+		//Name must only contain alphanumeric characters, underlines and spaces
+		if(name.match(/[^A-Za-z0-9_ ]/)) {
+			client.queueMessage(new bayeux.Message({
+				channel: '/tankwar/nameerror',
+				data: 'Your name contains invalid characters. Try again.'
+			}));
+			return;
+		}
+
+		if(this.findClientByName(name)) {
+			client.queueMessage(new bayeux.Message({
+				channel: '/tankwar/nameerror',
+				data: 'Name already in use. Choose another.'
+			}));
+			return;
+		}
+
+		client.name = name;
+		client.queueMessage(new bayeux.Message({
+			channel: '/tankwar/system',
+			data: 'Message of the Day: Welcome to TankWar on Unite!'
+		}));
+
+		this._broadcastRooms();
+		
+		//All clients are joined to the main lobby by default
+		this._lobby.join(client);
+	},
+
+	/**
+	 * Client sends a chat message
+	 */
+	say: function(client, message) {
+		var msg = sanitize(decodeURIComponent(message.data.msg));
+		if(!message.data.private) {
+			//Determine the correct room to send the message to
+			var room = this.findRoomByClient(client);
+			if(!room) {
+				opera.postError('Client ' + client.name + ' is not in a room and is chatting');
+				return;
+			}
+
+			room.broadcast('chat', [client.name, msg]);
+		}
+		else {
+			//This is a private message so send it directly to target
+			var target = decodeURIComponent(message.data.private);
+			var targetClient = this.findClientByName(target);
+			targetClient.queueMessage(new bayeux.Message({
+				channel: '/tankwar/chat', 
+				data: [client.name + ' (private)', msg]
+			}));
+			
+			//Send also to sender so they see it was actually sent
+			client.queueMessage(new bayeux.Message({
+				channel: '/tankwar/chat', 
+				data: [client.name + ' to ' + targetClient.name + ' (private)', msg]
+			}));
+		}
+	},
+
+	/**
+	 * Client hosts a game
+	 */
+	hostgame: function(client, message) {
+		var playerCount = parseInt(message.data.pc);
+		var password = '';
+
+		//Sanitize value to allowed range
+		if(playerCount < 2 || playerCount > 8) {
+			playerCount = 2;
+		}
+
+		//If password is sent this game becomes password protected
+		if(message.data.pw) {
+			password = message.data.pw;
+		}
+
+		//When game is created, the client is removed from the lobby and placed into the game
+		this._lobby.part(client);
+
+		var game = new TankWarGame(client.name, playerCount, password);
+		game.join(client);
+		this._availableGames.push(game);
+		this._games.push(game);
+
+		client.queueMessage(new bayeux.Message({
+			channel: '/tankwar/gamehosted',
+			data: 'ok'
+		}));
+		
+		//Send rooms so that people get updated about the new game
+		this._broadcastRooms();
+	},
+
+	/**
+	 * Client joins a game
+	 */
+	joingame: function(client, message) {
+		var gameName = message.data.name;
+		var password = '';
+		
+		//If client sent a password, use it
+		if(message.data.password) {
+			password = message.data.password;
+		}
+
+		//Find correct game by name and password
+		for(var i = 0, len = this._availableGames.length; i < len; i++) {
+			var game = this._availableGames[i];
+			if(game.getName() == gameName && password == game.getPassword()) {
+				this._lobby.part(client);
+				game.join(client);
+
+				//If game became full, send rooms again to refresh this one out
+				if(game.isFull()) {
+					this._availableGames.splice(i, 1);
+					this._broadcastRooms();
+				}
+
+				return;
+			}
+		}
+
+		//The loop returns if game is found so this should not run if found
+		client.queueMessage(new bayeux.Message({
+			channel: '/tankwar/wrongpass',
+			data: 'error'
+		}));
+	},
+
+	/**
+	 * Client leaves a game
+	 */
+	leavegame: function(client, request) {
+		//Remove client from game and put them back to lobby
+		this._removeClientFromRoom(client);
+		this._lobby.join(client);
+		client.queueMessage(new bayeux.Message({
+			channel: '/tankwar/gameleft',
+			data: 'ok'
+		}));
+	},
+
+	/**
+	 * The host sent the map data for a new game
+	 */
+	map: function(client, message) {
+		if(!message.data.points) {
+			return;
+		}
+
+		var pointStr = message.data.points;
+		var game = this.findRoomByClient(client);
+		if(game instanceof TankWarGame) {
+			var points = pointStr.split(/\|/g);
+			game.setMap(points);
+		}
+	},
+
+	/**
+	 * The host sent the allowed weapons for a new game
+	 */
+	weapons: function(client, message) {
+		if(!message.data.w) {
+			return;
+		}
+
+		var pointStr = message.data.w;
+		var game = this.findRoomByClient(client);
+		if(game instanceof TankWarGame) {
+			var weapons = pointStr.split(/,/g);
+			game.setWeapons(weapons);
+		}
+	},
+
+	/**
+	 * The host placed the player tanks on the map
+	 */
+	placetanks: function(client, message) {
+		if(!message.data.points) {
+			return;
+		}
+
+		var points = message.data.points;
+		var game = this.findRoomByClient(client);
+		if(game instanceof TankWarGame) {
+			game.setTanks(points.split(/\|/g));
+		}
+	},
+
+	/**
+	 * Client finished what it was doing and is now waiting
+	 */
+	idle: function(client, request) {
+		var room = this.findRoomByClient(client);
+		if(room instanceof TankWarGame) {
+			room.setIdle(client);
+		}
+	},
+
+	/**
+	 * Client sent a wind change for a game
+	 */
+	wind: function(client, message) {
+		if(!message.data.w) {
+			return;
+		}
+
+		var wind = message.data.w;
+		var game = this.findRoomByClient(client);
+		if(game instanceof TankWarGame) {
+			game.setWind(wind);
+		}
+	},
+
+	/**
+	 * Client changed their weapon in a game
+	 */
+	changeweapon: function(client, message) {
+		if(!message.data.n) {
+			return;
+		}
+
+		var weapon = message.data.n;
+		var game = this.findRoomByClient(client);
+		if(game instanceof TankWarGame) {
+			game.changeWeapon(client, weapon);
+		}
+	},
+
+	/**
+	 * Client fired a shot in a game
+	 */
+	shoot: function(client, message) {
+		if(!message.data.a || !message.data.p) {
+			return;
+		}
+
+		var game = this.findRoomByClient(client);
+		if(game instanceof TankWarGame) {
+			var a = message.data.a;
+			var p = message.data.p;
+			game.shoot(client, a, p);
+		}
+	},
+
+	/**
+	 * Client sent impacts from shot
+	 */
+	impacts: function(client, message) {
+		if(!message.data.points) {
+			return;
+		}
+
+		var game = this.findRoomByClient(client);
+		if(game instanceof TankWarGame) {
+			var impactData = message.data.points.split(/\|/g);
+			var impacts = impactData.map(function(impact) {
+				return impact.split(/,/g);
+			});
+			game.syncImpactsFromClient(client, impacts);
+		}
+	},
+
+	/**
+	 * Client sent healths after shot
+	 */
+	health: function(client, message) {
+		if(!message.data.hp) {
+			return;
+		}
+
+		var game = this.findRoomByClient(client);
+		if(game instanceof TankWarGame) {
+			var healthData = message.data.hp.split(/\|/g);
+			var healths = healthData.map(function(health) {
+				var nameHp = health.split(/,/g);
+				return { name: nameHp[0], health: nameHp[1] };
+			});
+			game.syncHealthsFromClient(client, healths);
+		}
+	},
+
+	positions: function(client, message) {
+		if(!message.data.p) {
+			return;
+		}
+
+		var game = this.findRoomByClient(client);
+		if(game instanceof TankWarGame) {
+			var positionData = message.data.p.split(/\|/g);
+			var positions = positionData.map(function(position) {
+				var datas = position.split(/,/g);
+				return { name: datas[0], x: datas[1], y: datas[2] };
+			});
+			game.syncPositionsFromClient(client, positions);
+		}
+	}
+};
 
 tankwarChannel.processMessage = function(connection, message) {
 	if(message.getChannel().length < 2) {
@@ -431,7 +363,7 @@ tankwarChannel.processMessage = function(connection, message) {
 	}
 
 	var command = message.getChannel()[1];
-	if(!app._handlers[command]) {
+	if(!this._handlers[command]) {
 		opera.postError('Bad command: ' + command);
 		return;
 	}
@@ -449,7 +381,7 @@ tankwarChannel.processMessage = function(connection, message) {
 	}));
 
 	client.addConnection(connection);
-	app._handlers[command].call(this, client, message);
+	this._handlers[command].call(this, client, message);
 	client.flushMessages();
 };
 
@@ -549,14 +481,6 @@ tankwarChannel.publishToClient = function(client, event, data) {
 
 };
 
-var cometd = new bayeux.CometdServer();
-cometd.onClientConnect = function(client) {
-	client.queueMessage(new bayeux.Message({
-		channel: '/tankwar/system',
-		data: 'What is your name?'
-	}));
-};
-cometd.registerChannel('tankwar', tankwarChannel);
 
 function cometdHandler(e) {
 	var conn = new bayeux.UniteConnection(e.connection);
@@ -792,13 +716,11 @@ var TankWarGame = ChatRoom.extend({
 		this._tanks = tanks;
 		this.broadcast('tanks', tanks);
 
-		opera.postError('sent tanks waiting');
 		//Wait for sync and start
 		this._waitAndCall('_nextTurn');
 	},
 
 	setIdle: function(client) {
-		opera.postError(client.name + ' finished');
 		var index = this._waitingList.indexOf(client);
 		if(index === -1) {
 			return;
@@ -903,7 +825,6 @@ var TankWarGame = ChatRoom.extend({
 
 	_continueGame: function(what) {
 		this._turnProgress[what] = true;
-		opera.postError('Progress: ' + what);
 
 		//All turn tasks need to be done before continuing
 		for(var task in this._turnProgress) {
@@ -911,7 +832,6 @@ var TankWarGame = ChatRoom.extend({
 				return;
 			}
 		}
-		opera.postError('turn should be done');
 		//Turn done. Check victory condition or continue
 		var gameOver = this._clients.every(function(client) {
 			return client.dead;
@@ -926,7 +846,6 @@ var TankWarGame = ChatRoom.extend({
 
 	_start: function() {
 		this._started = true;
-		opera.postError('Starting game');
 		this._clients[0].queueMessage(new bayeux.Message({
 			channel: '/tankwar/startgame', 
 			data: 'ok'

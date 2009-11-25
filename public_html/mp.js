@@ -29,12 +29,8 @@ function initMP()
 	
 	server = new Server();	
 
-	dojox.cometd.addListener('/meta/*', function(message) {
-		console.dir(message);
-	});
 	dojox.cometd.init({
-		url: requestPath,
-		logLevel: 'debug'
+		url: requestPath
 	});
 	dojox.cometd.subscribe('/tankwar/*', handleCometEvent);
 }

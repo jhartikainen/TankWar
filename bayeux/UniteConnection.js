@@ -44,7 +44,6 @@ bayeux.UniteConnection.prototype = {
 		});
 
 		var responseData = '[' + jsonData.join(',') + ']';
-		opera.postError('Sending: ' + responseData);
 		response.write(responseData);
 		response.flush();
 		response.close();
@@ -58,7 +57,6 @@ bayeux.UniteConnection.prototype = {
 		var req = this._connection.request;
 
 		if(!req.body) {
-			opera.postError('Got data: ' + decodeURIComponent(req.bodyItems['message'][0]));
 			return decodeURIComponent(req.bodyItems['message'][0]);
 		}
 
@@ -68,7 +66,6 @@ bayeux.UniteConnection.prototype = {
 			body = body.substr(8);
 		}
 
-		opera.postError('Got data: ' + body);
 		return body;
 	}
 };

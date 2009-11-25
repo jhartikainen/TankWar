@@ -24,6 +24,9 @@ window.onload = function () {
 			data: 'What is your name?'
 		}));
 	};
+	cometd.onClientDisconnect = function(client) {
+		tankwarChannel._clientDisconnected(client);
+	};
 	cometd.registerChannel('tankwar', tankwarChannel);
 
     if (webserver) {
@@ -36,6 +39,7 @@ window.onload = function () {
 	//this is so that the server sends any queued messages periodically
 	setInterval(function() {
 		cometd.sendQueuedMessages();
+		cometd.removeTimedOutClients();
 	}, 1000);
 }
 

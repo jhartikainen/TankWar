@@ -79,6 +79,14 @@ bayeux.CometdServer.prototype = {
 		});
 	},
 
+	removeTimedOutClients: function() {
+		this._clients.filter(function(client) {
+			return client.hasTimedOut();
+		}).forEach(function(client) {
+			this.disconnect(client.getId());
+		}, this);
+	},
+
 	/**
 	 * Register a channel
 	 * @param {String} name the base name of the channel
@@ -140,6 +148,11 @@ bayeux.CometdServer.prototype = {
 		}
 
 		this._clients.splice(this._clients.indexOf(client), 1);
+
+		if(this.onClientDisconnect) {
+			this.onClientDisconnect(client);
+		}
+
 		return true;
 	},
 
@@ -156,6 +169,12 @@ bayeux.CometdServer.prototype = {
 	 * @param {bayeux.Client} client
 	 */
 	onClientConnect: null,
+
+	/**
+	 * Event handler which is fired when a client has disconnected either by itself or by timeout
+	 * @param {bayeux.Client} client
+	 */
+	onClientDisconnect: null,
 
 	_errorMessageFromCode: function(code, data) {
 		switch(code) {

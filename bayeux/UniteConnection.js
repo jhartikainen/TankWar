@@ -29,8 +29,8 @@ bayeux.UniteConnection.prototype = {
 	 */
 	sendMessages: function(messages) {
 		var response = this._connection.response;
-		if(response.closed) {
-			throw new bayeux.ConnectionError('Connection has been closed');
+		if(!response || response.closed) {
+			return;
 		}
 
 		response.setResponseHeader('Content-Type', 'application/json');

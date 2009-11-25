@@ -58,9 +58,9 @@ function createPasswordMenu()
 
 function createLobbyMenu()
 {
-	//var d = createElement('div','lobby');
 	var d = mpMenu.obj;
 	d.id = 'lobby';
+	d.innerHTML = '';
 	
 	var top = createElement('div','lobbyTop');
 	var msg = createElement('span','lobbyMessage');
@@ -137,38 +137,6 @@ function createLobbyMenu()
 	d.appendChild(m);	
 }
 
-function initEventSource()
-{
-	var es = $('events');
-	es.addEventListener('session-id',sessID,false);
-	es.addEventListener('chat', chatHandler, false);	
-	es.addEventListener('system', systemHandler, false);
-	es.addEventListener('names', userListHandler, false);
-	es.addEventListener('rooms', roomListHandler, false);	
-	es.addEventListener('join',userJoin,false);	
-	es.addEventListener('part',userPart,false);
-	es.addEventListener('console-message',consoleMessage,false);
-	es.addEventListener('nameerror',server.nameError,false);
-	
-	es.addEventListener('gamehosted',server.gameHosted,false);
-	es.addEventListener('gamejoined',server.gameJoined,false);
-	es.addEventListener('gamejoin',server.userJoins,false);
-	es.addEventListener('wrongpass',server.wrongPass,false);
-	es.addEventListener('gameleave',server.userLeaves,false);
-	es.addEventListener('gameleft',server.gameLeft,false);
-	es.addEventListener('map',server.gotMap,false);
-	es.addEventListener('weapons',server.gotWeapons,false);
-	es.addEventListener('startgame',server.startGame,false);
-	es.addEventListener('turn',server.startTurn,false);
-	es.addEventListener('tanks',server.gotTanks,false);
-	es.addEventListener('shoot',server.gotShot,false);
-	es.addEventListener('weaponchanged',server.weaponChanged,false);
-	es.addEventListener('impacts',server.gotImpacts,false);
-	es.addEventListener('wind',server.gotWind,false);
-	es.addEventListener('health',server.gotHealth,false);
-	es.addEventListener('positions',server.gotPositions,false);
-}
-
 function handleCometEvent(message) {
 	var handlers = {
 		'session-id': sessID,
@@ -205,7 +173,8 @@ function handleCometEvent(message) {
 
 function leaveOnline()
 {
-	$('lobby').removeChild($('events'));
+	myname = '';
+	dojox.cometd.disconnect();
 	menuHandler.closeMenu();
 	server = null;
 	engine.onstop = null;

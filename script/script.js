@@ -24,6 +24,9 @@ window.onload = function () {
 			data: 'What is your name?'
 		}));
 	};
+	cometd.onClientDisconnect = function(client) {
+		tankwarChannel._clientDisconnected(client);
+	};
 	cometd.registerChannel('tankwar', tankwarChannel);
 
     if (webserver) {
@@ -36,6 +39,7 @@ window.onload = function () {
 	//this is so that the server sends any queued messages periodically
 	setInterval(function() {
 		cometd.sendQueuedMessages();
+		cometd.removeTimedOutClients();
 	}, 1000);
 }
 
@@ -496,8 +500,7 @@ function gameLoader(e)
 		var url = e.connection.request.host.replace(/admin\./, '');
 		url += e.connection.request.uri;
 
-		response.setStatusCode(307);
-		response.setResponseHeader('Location', 'http://' + url);
+		response.write('<meta http-equiv="refresh content="0;url=http://' + url + '" />');
 		response.close();
 		return;
 	}

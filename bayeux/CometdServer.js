@@ -73,7 +73,7 @@ bayeux.CometdServer.prototype = {
 	 */
 	sendQueuedMessages: function() {
 		this._clients.forEach(function(client){
-			if(client.getQueueLength() > 1) {
+			if(client.getQueueLength() > 0 && client.canFlush()) {
 				opera.postError('Flushing...');
 				client.flushMessages();
 			}
@@ -146,7 +146,17 @@ bayeux.CometdServer.prototype = {
 
 	clientConnected: function(client) {
 		client.setState('connected');
+
+		if(this.onClientConnect) {
+			this.onClientConnect(client);
+		}
 	},
+
+	/**
+	 * Event handler which is fired when a client has succesfully connected
+	 * @param {bayeux.Client} client
+	 */
+	onClientConnect: null,
 
 	_errorMessageFromCode: function(code, data) {
 		switch(code) {

@@ -39,7 +39,7 @@ function ComputerPlayer(n)
 		terrain.createPath(ctx);
 	
 		//find the ground on tanks' vertical position
-		for(var y = 0; y < canvasH; y++)
+		for(var y = 1; y < canvasH; y++)
 		{
 			//if x,y is inside the path, ground isn't reached
 			if(!ctx.isPointInPath(x,y))

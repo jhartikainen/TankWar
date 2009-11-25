@@ -29,7 +29,13 @@ function initMP()
 	
 	server = new Server();	
 
-	dojox.cometd.init('/tankwar/cometd');
+	dojox.cometd.addListener('/meta/*', function(message) {
+		console.dir(message);
+	});
+	dojox.cometd.init({
+		url: requestPath,
+		logLevel: 'debug'
+	});
 	dojox.cometd.subscribe('/tankwar/*', handleCometEvent);
 }
 
@@ -168,7 +174,37 @@ function initEventSource()
 }
 
 function handleCometEvent(message) {
-	console.dir(message);
+	var handlers = {
+		'session-id': sessID,
+		system: systemHandler,
+		chat: chatHandler,
+		names: userListHandler,
+		rooms: roomListHandler,
+		join: userJoin,
+		part: userPart,
+		'console-message': consoleMessage,
+		nameerror: server.nameError,
+		gamehosted: server.gameHosted,
+		gamejoined: server.gameJoined,
+		gamejoin: server.userJoins,
+		wrongpass: server.wrongPass,
+		gameleave: server.userLeaves,
+		gameleft: server.gameLeft,
+		map: server.gotMap,
+		weapons: server.gotWeapons,
+		startgame: server.startGame,
+		turn: server.startTurn,
+		tanks: server.gotTanks,
+		shoot: server.gotShot,
+		weaponchanged: server.weaponChanged,
+		impacts: server.gotImpacts,
+		wind: server.gotWind,
+		health: server.gotHealth,
+		positions: server.gotPositions
+	};
+
+	var channel = message.channel.split(/\//g);
+	handlers[channel[2]].call(this, message.data);
 }
 
 function leaveOnline()
@@ -181,17 +217,17 @@ function leaveOnline()
 
 function userJoin(event)
 {
-	addMessage('<b>'+event.data + ' joins</b>');
+	addMessage('<b>'+event + ' joins</b>');
 }
 
 function userPart(event)
 {
-	addMessage('<b>'+event.data+' leaves</b>');
+	addMessage('<b>'+event+' leaves</b>');
 }
 
 function consoleMessage(event)
 {
-	addMessage('<b>Message from the server admin: '+event.data+'</b>');
+	addMessage('<b>Message from the server admin: '+event+'</b>');
 }
 
 function addMessage(data)
@@ -206,15 +242,14 @@ function addMessage(data)
 	scrollChat();
 }
 
-function sessID(event)
+function sessID(sessionId)
 {	
-	uid = event.data;	
+	uid = sessionId;
 }
 
 
-function userListHandler(event)
+function userListHandler(names)
 {	
-	var names = event.data.split("\n");
 	var l = $('userList');
 
 	while(l.options.length > 0)
@@ -232,9 +267,8 @@ function userListHandler(event)
 }
 
 var rooms = new Array();
-function roomListHandler(event)
+function roomListHandler(names)
 {
-	var names = event.data.split("\n");	
 	var l = $('roomList');
 	rooms = new Array();
 	while(l.options.length > 0)
@@ -259,9 +293,8 @@ function roomListHandler(event)
 		rooms.push(room);
 	}
 }
-function chatHandler(event)
+function chatHandler(data)
 {
-	var data = event.data.split('\n');
 	addMessage('<b>'+data[0]+'</b>&gt; '+data[1]);	
 }
 
@@ -270,9 +303,9 @@ function scrollChat()
 	$(server.chat).scrollTop = $(server.chat).scrollHeight;
 }
 
-function systemHandler(event)
+function systemHandler(data)
 {
-	addMessage('<b>'+event.data+'</b><br />');	
+	addMessage('<b>'+data+'</b><br />');	
 }
 
 function joinGame()
@@ -343,18 +376,21 @@ function Server()
 
 	this.shoot = function(source,velocity)
 	{
-		this.req('shoot','a='+source+'&p='+velocity);
+		this.req('shoot', {
+			a: source,
+			p: velocity
+		});
 	}
 	
 	this.gotShot = function(e)
 	{
-		var vecs = e.data.split(',');
+		var vecs = e.split(',');
 		curPlayer.shoot(vecs[0],vecs[1]);
 	}
 	
 	this.gotWeapons = function(e)
 	{		
-		that.ammo = e.data.split('\n');
+		that.ammo = e;
 		for(var i = 0; i < that.players.length; i++)
 		{
 			p = that.players[i];
@@ -368,7 +404,7 @@ function Server()
 	
 	this.nameError = function(e)
 	{
-		addMessage('<b>' + e.data + '</b>');
+		addMessage('<b>' + e + '</b>');
 		myname = '';
 	}
 	
@@ -380,7 +416,7 @@ function Server()
 	
 	this.gotWind = function(e)
 	{		
-		engine.wind = Number(e.data);
+		engine.wind = Number(e);
 		windIndicator.value = engine.wind;
 		draw();
 	}
@@ -393,18 +429,20 @@ function Server()
 			str += '|'+this.players[i].name + ',' + this.players[i].tank.health;
 		}
 		
-		this.req('health','hp='+str);
+		this.req('health', {
+			hp: str
+		});
 	}	
 	
 	this.gotImpacts = function(e)
 	{		
-		var d = e.data.split('\n');
+		var d = e;
 		var pts = new Array();
 		var hit = false;
 		var pcount = that.players.length;
 		for(var i = 0; i < d.length; i++)
 		{
-			var p = d[i].split(',');
+			var p = d[i];
 			var x = p[0];
 			var y = p[1];
 			var rad = p[2];
@@ -471,7 +509,7 @@ function Server()
 	
 	this.weaponChanged = function(e)
 	{
-		var d = e.data.split(',');
+		var d = e.split(',');
 		var p = that.findPlayer(d[0]);
 		if(p != null)
 			p.changeWeapon(d[1]);
@@ -505,7 +543,10 @@ function Server()
 	
 	this.syncHit = function(hit)
 	{
-		this.req('hit','x='+hit.x+'&y='+hit.y);
+		this.req('hit', {
+			x: hit.x,
+			y: hit.y
+		});
 	}
 	
 	this.sendMap = function()
@@ -521,7 +562,9 @@ function Server()
 			data += '|';
 		}
 		data = data.substr(0,(data.length-1));
-		this.req('map','points='+data);
+		this.req('map', {
+			points: data
+		});
 	}
 	
 	this.hostGame = function(players,password)
@@ -529,18 +572,28 @@ function Server()
 		//this.state = this.states.hosting;
 		
 		if(password)
-			this.req('hostgame','pc='+players+'&pw='+password);
+			this.req('hostgame', {
+				pc: players,
+				pw: password
+			});
 		else
-			this.req('hostgame','pc='+players);
+			this.req('hostgame', {
+				pc: players
+			});
 		
 	}
 	
 	this.joinGame = function(name,pass)
 	{
 		if(!pass)
-			this.req('joingame','name='+name);
+			this.req('joingame', {
+				name: name
+			});
 		else
-			this.req('joingame','name='+name+'&password='+pass);
+			this.req('joingame', {
+				name: name,
+				password: pass
+			});
 	}
 	
 	this.startGame = function(e)
@@ -562,7 +615,9 @@ function Server()
 		
 		positions = positions.substr(0,(positions.length-1));
 		
-		that.req('placetanks','points='+positions);
+		that.req('placetanks', {
+			points: positions
+		});
 	}
 	
 	this.turnDone = function()
@@ -572,10 +627,12 @@ function Server()
 	
 	this.changeWeapon = function(name)
 	{
-		this.req('changeweapon','n='+name);
+		this.req('changeweapon', {
+			n: name
+		});
 	}
 	
-	this.gameJoined = function(e)
+	this.gameJoined = function(names)
 	{
 		//Hide lobby
 		menuHandler.getOpenMenu().hide();
@@ -586,8 +643,6 @@ function Server()
 		deadPlayers = that.deadPlayers;
 	
 		requireDatas = false;
-		
-		var names = e.data.split("\n");
 		
 		for(var i = 0; i < names.length; i++)
 		{
@@ -611,7 +666,7 @@ function Server()
 	
 	this.gotMap = function(e)
 	{		
-		var points = e.data.split("\n");
+		var points = e;
 		var p = new Array();
 		for(var i = 0; i < points.length; i++)
 		{			
@@ -624,7 +679,7 @@ function Server()
 	
 	this.gotTanks = function(e)
 	{	
-		var points = e.data.split("\n");
+		var points = e;
 		var ammo = ammoInputList.getValues();
 		
 		for(var i = 0; i < points.length; i++)
@@ -676,12 +731,14 @@ function Server()
 		
 		str = str.substr(0,(str.length-1));
 		
-		this.req('impacts','points='+str);
+		this.req('impacts', {
+			points: str
+		});
 	}
 	
 	this.gotPositions = function(e)
 	{		
-		var d = e.data.split('\n');
+		var d = e;
 		for(var i = 0; i < d.length; i++)
 		{
 			var pts = d[i].split(',');
@@ -701,7 +758,9 @@ function Server()
 			str += '|'+this.players[i].name + ',' + this.players[i].tank.position.x + ',' + this.players[i].tank.position.y;
 		}
 		
-		this.req('positions','p='+str);
+		this.req('positions', {
+			p: str
+		});
 	}
 	
 	this.sync = function()
@@ -723,17 +782,17 @@ function Server()
 	
 	this.userJoins = function(e)
 	{
-		var p = new NetworkPlayer(e.data);
+		var p = new NetworkPlayer(e);
 		that.players.push(p);		
-		showMessage(e.data + ' joins',2000);
+		showMessage(e + ' joins',2000);
 	}
 	
 	this.userLeaves = function(e)
 	{
-		var p = that.findPlayer(e.data);
+		var p = that.findPlayer(e);
 		if(p == null)
 		{
-			p = that.findDeadPlayer(e.data);
+			p = that.findDeadPlayer(e);
 			if(p != null)
 				that.deadPlayers.remove(p);
 		}
@@ -744,7 +803,7 @@ function Server()
 			opera.postError('Error removing player from game');
 		else
 		{
-			var msg = e.data + ' left the game';
+			var msg = e + ' left the game';
 			var time = 2000;
 			
 			if(that.players.length == 1)
@@ -793,7 +852,9 @@ function Server()
 			str += ','+ammo[i];
 		}
 		
-		this.req('weapons','w='+str);
+		this.req('weapons', {
+			w: str
+		});
 	}
 	
 	var gameChat = null;
@@ -869,7 +930,7 @@ function Server()
 	
 	this.gotHealth = function(e)
 	{			
-		var d = e.data.split('\n');
+		var d = e;
 		
 		for(var i = 0; i < d.length; i++)
 		{
@@ -909,19 +970,21 @@ function Server()
 		
 		for(var i = 0; i < players.length; i++)
 		{
-			if(players[i].name == e.data)
+			if(players[i].name == e)
 				curPlayer = players[i];
 		}
 		impacts = new Array();
 		
 		
-		if(e.data == myname)
+		if(e == myname)
 		{
 			requireDatas = false;
 			engine.changeWind();
 			windIndicator.value = engine.wind;
 			draw();
-			that.req('wind','w='+engine.wind);
+			that.req('wind', {
+				w: engine.wind
+			});
 			weaponSelect.select(curPlayer.weaponName);
 			$('weaponDisplay').innerHTML = curPlayer.weaponName + ' (' + curPlayer.selectedWeapon.ammo +' left)';
 			gameState = states.play;
@@ -934,21 +997,22 @@ function Server()
 	
 	this.req = function(command,param)
 	{
-		var req = new XMLHttpRequest();
-		if(param)
-			req.open('GET',requestPath+'/?sid='+uid+'&c='+command+'&'+param+'&rand='+Math.random(), true);
-		else
-			req.open('GET',requestPath+'/?sid='+uid+'&c='+command+'&rand='+Math.random(), true);
-		
-		
-		req.send(null);
+		var message = {
+			sid: uid,
+			command: command
+		};
+
+		if(param) {
+			message.param = param;
+		}
+
+		dojox.cometd.publish('/tankwar/' + command, param);
 	}
 }
 
 
 function sendMsg()
 {	
-	var req = new XMLHttpRequest();			
 	/*req.onreadystatechange = function()
 	{
 		if(req.readystate == 4)
@@ -962,23 +1026,32 @@ function sendMsg()
 	
 	if(myname != '')
 	{
+		var message = {
+			sid: uid,
+			msg: message
+		};
+
 		if($('privateMessage').checked)
 		{
 			var target = $('userList').value;
 			if(target == myname)
 				return;
 				
-			req.open('GET',requestPath+'/?sid='+uid+'&c=say&msg='+encodeURIComponent(message)+'&private='+target+'&rand='+Math.random(), true);			
+			message.private = target;
 		}
-		else
-			req.open('GET',requestPath+'/?sid='+uid+'&c=say&msg='+encodeURIComponent(message)+'&rand='+Math.random(), true);		
+
+		dojox.cometd.publish('/tankwar/say', message);
 	}
 	else
 	{
-		req.open('GET',requestPath+'/?sid='+uid+'&c=name&name='+message+'&rand='+Math.random(), true);
 		myname = msg.value;		
+		dojox.cometd.publish('/tankwar/name', {
+			sid: uid,
+			name: message
+		});
 	}
-	req.send(null);
+
+
 	msg.value = '';
 }
 

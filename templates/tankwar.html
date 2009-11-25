@@ -236,6 +236,8 @@ canvas {
 </style>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/dojo/1.3/dojo/dojo.xd.js"
 		djConfig="isDebug: true"></script>
+<script type="text/javascript" src="org/cometd.js"></script>
+<script type="text/javascript" src="dojox/cometd.js"></script>
 <script type="text/javascript" src="cometd.js"></script>
 <script type="text/javascript" src="common.js"></script>
 <script type="text/javascript" src="pixelfont.js"></script>
@@ -248,7 +250,7 @@ canvas {
 <script type="text/javascript" src="checkupdate.js"></script>
 <script type="text/javascript" src="mp.js"></script>
 <script type="text/javascript">
-var requestPath = '{{data.path}}sseunite';
+var requestPath = '{{data.path}}cometd';
 window.onload = init;
 var menuHandler,AIready=false,prevState=states.wait;
 var mainMenu,mpMenu,playersMenu,ammoMenu,weaponMenu,weaponSelect,terrainMenu;

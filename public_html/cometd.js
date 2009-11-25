@@ -1,4 +1,4 @@
-dojo.require('dojox.cometd');
+//dojo.require('dojox.cometd');
 //dojo.require('dojox.cometd.callbackPollTransport');
 /*dojo.addOnLoad(function() {
 	dojox.cometd.init('/tankwar/cometd');

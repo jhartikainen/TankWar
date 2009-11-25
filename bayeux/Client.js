@@ -34,9 +34,21 @@ bayeux.Client.prototype = {
 	},
 
 	/**
+	 * Is there an active connection or other to push messages to?
+	 * @return {Boolean}
+	 */
+	canFlush: function() {
+		return this._connections.length > 0;
+	},
+
+	/**
 	 * Attempts to flush messages through a connection
 	 */
 	flushMessages: function() {
+		if(this._connections.length === 0) {
+			opera.postError('No available connections!');
+		}
+
 		var conn = this._connections.pop();
 		conn.sendMessages(this._messageQueue);
 		this._messageQueue = [];

@@ -138,6 +138,10 @@ function Point(x,y)
 	}
 }
 
+Point.prototype.toString = function() {
+	return 'Point(' + this.x + ', ' + this.y + ')';
+}
+
 function customPolyCheck(x,y)
 {	
 	var i, j=0;
@@ -231,6 +235,40 @@ function Vector2(x,y)
 		return this.x+','+this.y;	
 	}
 }
+
+/**
+ * Calculate intersection of two lines formed by four vectors
+ * @param {Vector2} vec1Start
+ * @param {Vector2} vec1End
+ * @param {Vector2} vec2Start
+ * @param {Vector2} vec2End
+ * @return {Point|Boolean}
+ */
+Vector2.intersection = function(vec1Start, vec1End, vec2Start, vec2End) {
+	var vec1t = (vec2End.x - vec2Start.x) * (vec1Start.y - vec2Start.y) - (vec2End.y - vec2Start.y) * (vec1Start.x - vec2Start.x);
+	var vec2t = (vec1End.x - vec1Start.x) * (vec1Start.y - vec2Start.y) - (vec1End.y - vec1Start.y) * (vec1Start.x - vec2Start.x);
+
+	var intersect = (vec2End.y - vec2Start.y) * (vec1End.x - vec1Start.x) - (vec2End.x - vec2Start.x) * (vec1End.y - vec1Start.y);
+
+	//Do the lines intersect?
+	if(intersect != 0) {
+		var vec1intersect = vec1t / intersect;
+		var vec2intersect = vec2t / intersect;
+
+		if(0 <= vec1intersect && vec1intersect <= 1 && 0 <= vec2intersect && vec2intersect <= 1) {
+			return new Point(
+				vec1Start.x + vec1intersect * (vec1End.x - vec1Start.x),
+				vec1Start.y + vec1intersect * (vec1End.y - vec1Start.y)
+			);
+		}
+	}
+	else {
+		//Lines are parallel
+		return true;
+	}
+
+	return false;
+};
 
 
 function Selector(parent,onclick)

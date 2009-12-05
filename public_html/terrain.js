@@ -20,7 +20,24 @@ function Terrain(p)
 		this.yArray.push(points[i].y);
 	}
 	
+	/**
+	 * Return lines from terrain, ie. connected points
+	 * @return {Array}
+	 */
+	this.getLines = function() {
+		var lines = [];
 	
+		for(var i = 0, len = points.length - 1; i < len; i++) {
+			lines.push({
+				start: points[i],
+				end: points[i + 1]
+			});
+		}
+
+		return lines;
+	};
+
+
 	this.getNormalAt = function(x)
 	{
 		var p1,p2;

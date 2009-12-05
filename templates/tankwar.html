@@ -641,7 +641,7 @@ function Engine()
 		var dead = new Array();
 		var o;
 		var timeStep = clock.getSeconds();
-		
+
 		for(var i = 0, l = objects.length; i < l; i++)
 		{
 			o = objects[i];
@@ -674,14 +674,26 @@ function Engine()
 						dead.push(o);
 					}
 				}
-				
-				if((!ctx.isPointInPath(o.position.x, o.position.y) && o.position.y > 0) ||
+
+                var lines = terrain.getLines();
+                var collision = null;
+                if(oldPosition.x !== o.position.x && oldPosition.y !== o.position.y) {
+                    for(var lineIdx = 0, lineLen = lines.length; lineIdx < lineLen; lineIdx++) {
+                        collision = Vector2.intersection(oldPosition, o.position, lines[lineIdx].start, lines[lineIdx].end);
+
+                        if(collision) {
+                            break;
+                        }
+                    }
+                }
+
+				if((collision && o.position.y > 0) ||
 					(o.position.x < 0 || o.position.x > canvasW || o.position.y > canvasH))
 				{
 					ctx.save();
-					
+
 					ctx.beginPath();
-					ctx.moveTo(o.position.x,o.position.y);				
+					ctx.moveTo(o.position.x,o.position.y);
 					ctx.arc(o.position.x,o.position.y,o.radius,0,PI2,false);
 					ctx.fillStyle = 'yellow';
 					ctx.closePath();

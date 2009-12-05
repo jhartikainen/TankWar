@@ -3,20 +3,20 @@
  * @param {Object} p from TerrainCreator
  */
 var Terrain = function(p) {
-	var points = p
-	var holes = new Array();
+	this._points = p
+	this._holes = [];
 
-	this.clearColor = 'lightblue';
+	this._clearColor = 'lightblue';
 
 	//Added for customPolyCheck
-	this.pointCount = points.length;
+	this.pointCount = this._points.length;
 	this.xArray = new Array();
 	this.yArray = new Array();
 
 	for(var i = 0; i < this.pointCount; i++)
 	{
-		this.xArray.push(points[i].x);
-		this.yArray.push(points[i].y);
+		this.xArray.push(this._points[i].x);
+		this.yArray.push(this._points[i].y);
 	}
 };
 
@@ -26,10 +26,10 @@ Terrain.prototype = {
 
 		for(var i = 0; i < (this.pointCount-1); i++)
 		{
-			if(points[i].x <= x && points[(i+1)].x > x)
+			if(this._points[i].x <= x && this._points[(i+1)].x > x)
 			{
-				p1 = points[i];
-				p2 = points[(i+1)];
+				p1 = this._points[i];
+				p2 = this._points[(i+1)];
 				break;
 			}
 		}
@@ -50,10 +50,10 @@ Terrain.prototype = {
 
 		for(var i = 0; i < (this.pointCount-1); i++)
 		{
-			if(points[i].x <= x && points[(i+1)].x > x)
+			if(this._points[i].x <= x && this._points[(i+1)].x > x)
 			{
-				p1 = points[i];
-				p2 = points[(i+1)];
+				p1 = this._points[i];
+				p2 = this._points[(i+1)];
 				break;
 			}
 		}
@@ -69,23 +69,41 @@ Terrain.prototype = {
 			return null;
 	},
 
+	/**
+	 * Return lines from terrain, ie. connected points
+	 * @return {Array}
+	 */
+	getLines: function() {
+		var lines = [];
+		opera.postError(this._points.length - 1);
+		for(var i = 0, len = this._points.length - 1; i < len; i++) {
+			lines.push({
+				start: this._points[i],
+				end: this._points[i + 1]
+			});
+		}
+
+		opera.postError(lines.length);
+		return lines;
+	},
+
 	getPoints: function() {
-		return points;
+		return this._points;
 	},
 
 	getHoles: function() {
-		return holes;
+		return this._holes;
 	},
 
 	getLastHit: function() {
-		if(holes.length > 0)
-			return holes[(holes.length-1)];
+		if(this._holes.length > 0)
+			return this._holes[(this._holes.length-1)];
 		else
 			return null;
 	},
 
 	clean: function() {
-		holes = [];
+		this._holes = [];
 	},
 
 	createLastHitPath: function(c) {
@@ -107,7 +125,7 @@ Terrain.prototype = {
 	},
 
 	removeLastHit: function() {
-		holes.pop();
+		this._holes.pop();
 	},
 
 	/**
@@ -118,7 +136,7 @@ Terrain.prototype = {
 		context.fillStyle = '#5c4033';
 		context.fillRect(0,0, context.canvas.width, context.canvas.height);
 
-		context.fillStyle = this.clearColor;
+		context.fillStyle = this._clearColor;
 
 		this.createPath(context);
 
@@ -131,21 +149,21 @@ Terrain.prototype = {
 	 */
 	createPath: function(c) {
 		c.beginPath();
-		c.moveTo(points[0].x, points[0].y);
+		c.moveTo(this._points[0].x, this._points[0].y);
 
-		for(var i = 1, l = points.length; i < l; i++) {
-			c.lineTo(points[i].x,points[i].y);
+		for(var i = 1, l = this._points.length; i < l; i++) {
+			c.lineTo(this._points[i].x,this._points[i].y);
 		}
 
 
 		//Create destroyed areas
-		for(var i = 0, l = holes.length; i < l; i++) {
-			if(isNaN(holes[i].x) || isNaN(holes[i].y) || isNaN(holes[i].r)) {
+		for(var i = 0, l = this._holes.length; i < l; i++) {
+			if(isNaN(this._holes[i].x) || isNaN(this._holes[i].y) || isNaN(this._holes[i].r)) {
                 continue;
             }
 
-			c.moveTo(holes[i].x,holes[i].y);
-			c.arc(holes[i].x,holes[i].y,holes[i].r,0,PI2,false);
+			c.moveTo(this._holes[i].x,this._holes[i].y);
+			c.arc(this._holes[i].x,this._holes[i].y,this._holes[i].r,0,PI2,false);
 		}
 		c.closePath();
 	},
@@ -161,6 +179,6 @@ Terrain.prototype = {
 			y: point.y,
 			r: Number(radius)
 		};
-		holes.push(h);
+		this._holes.push(h);
 	}
 };

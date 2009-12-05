@@ -500,7 +500,7 @@ function gameLoader(e)
 		var url = e.connection.request.host.replace(/admin\./, '');
 		url += e.connection.request.uri;
 
-		response.write('<meta http-equiv="refresh content="0;url=http://' + url + '" />');
+		response.write('<meta http-equiv="refresh" content="0;url=http://' + url + '" />');
 		response.close();
 		return;
 	}

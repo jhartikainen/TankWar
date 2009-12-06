@@ -48,6 +48,17 @@ Vector2.intersection = function(vec1Start, vec1End, vec2Start, vec2End) {
 	return false;
 };
 
+/**
+ * Does a vector line intersect with a circle?
+ * @param {Vector2} vecStart
+ * @param {Vector2} vecEnd
+ * @param {Circle} circle
+ * @return 
+ */
+Vector2.circleIntersection = function(vecStart, vecEnd, circle) {
+
+};
+
 Vector2.prototype = {
 	normalize: function() {
 		var len = this.getLength();

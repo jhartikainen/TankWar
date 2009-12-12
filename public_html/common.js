@@ -122,21 +122,6 @@ function Random(min,max)
 	return (Math.random()*(max-min))+min;
 }
 
-function Point(x,y)
-{
-	//if param is another Point, copy it 
-	if(x instanceof Point || x instanceof Vector2)
-	{
-		this.x = x.x;
-		this.y = x.y;
-	}
-	else
-	{
-		//Make sure they are numbers
-		this.x = Number(x);
-		this.y = Number(y);
-	}
-}
 
 function customPolyCheck(x,y)
 {	

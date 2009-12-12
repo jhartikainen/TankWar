@@ -39,16 +39,23 @@ TankWar.prototype = {
 			var y = ev.offsetY || ev.clientY;
 
 
-			line1[mode].x = x;
+			/*line1[mode].x = x;
 			line1[mode].y = y;
 			mode++;
 			if(mode > 1) {
 				mode = 0;
 				drawLines();
-			}
+			}*/
+			var rect = tank.getRect();
+			var imageData = context.getImageData(rect.x, rect.y, rect.width, rect.height);
+			terrain.renderRect(imageData, rect);
+			context.putImageData(imageData, rect.x,  rect.y, 0, 0, rect.width, rect.height);
+
+			tank.setPosition(x, y);
+			tank.render(context);
 		};
 
-		context.fillStyle = 'black';
+		context.fillStyle = 'lightblue';
 		context.fillRect(0, 0, context.canvas.width, context.canvas.height);
 
 		var imageData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
@@ -56,6 +63,29 @@ TankWar.prototype = {
 		context.putImageData(imageData, 0, 0);
 
 		var canvasWidth = canvas.width;
+
+		var tank = new Tank(new Point(100, 100));
+		tank.setTurretAngle(Math.deg2Rad(0));
+		tank.render(context);
+
+		var angle = 180;
+		setInterval(function(){
+			angle++;
+			if(angle == 360) {
+				angle = 0;
+			}
+
+			tank.setTurretAngle(Math.deg2Rad(angle));
+			if(angle == 0) {
+				angle = 180;
+			}
+
+			var rect = tank.getRect();
+			var imageData = context.getImageData(rect.x, rect.y, rect.width, rect.height);
+			terrain.renderRect(imageData, rect);
+			context.putImageData(imageData, rect.x,  rect.y, 0, 0, rect.width, rect.height);
+			tank.render(context);
+		}, 10);
 		
 		var drawLines = function() {
 			//terrain.render(imageData);
@@ -71,7 +101,7 @@ TankWar.prototype = {
 			context.stroke();
 			*/
 	
-			var points = generator._plotLine(line1[0].x, line1[0].y, line1[1].x, line1[1].y);
+			var points = Geom.plotLine(line1[0].x, line1[0].y, line1[1].x, line1[1].y);
 
 			//Determine the smallest rectangle we can fit the line into to speed up redraw
 			var minX = points[0].x;
@@ -98,16 +128,31 @@ TankWar.prototype = {
 			var areaW = maxX - minX + 1;
 			var areaH = maxY - minY + 1;
 			var imageData = context.getImageData(minX, minY, areaW, areaH);
+
+			var collision = terrain.lineIntersects(points);
 			for(var i = 0; i < points.length; i++) {
 				var x = points[i].x - minX;
 				var y = points[i].y - minY;
 				//<< 2 -> multiply by four but faster
 				var pt = ((imageData.width * y) + x) << 2;
-				imageData.data[pt] = 255;
-				imageData.data[pt+1] = 255;
-				imageData.data[pt+2] = 255;
+				if(collision) {
+					imageData.data[pt] = 255;
+					imageData.data[pt+1] = 0;
+					imageData.data[pt+2] = 0;
+				}
+				else {
+					imageData.data[pt] = 255;
+					imageData.data[pt+1] = 255;
+					imageData.data[pt+2] = 255;
+				}
 			}
+
 			context.putImageData(imageData, minX, minY);
+
+			if(collision) {
+				context.fillStyle = 'red';
+				context.fillRect(collision.x, collision.y, 5, 5);
+			}
 			//~~ is same as Math.floor but faster
 			/*var tileX = ~~(x / tileDivisor);
 			var tileY = ~~(y / tileDivisor);
@@ -140,27 +185,5 @@ TankWar.prototype = {
 
 			context.putImageData(imageData, blitX, blitY);*/
 		};
-
-		
-		/*context.fillStyle='red';
-		terrain.createPath(context);
-		context.fill();*/
-
-		var log = document.getElementById('log');
-
-
-		var intersect = function() {
-			var pts = terrain.getLines();
-			for(var i = 0, len = pts.length; i < len; i++) {
-				var point = Vector2.intersection(line1[0], line1[1], pts[i].start, pts[i].end);
-				if(point instanceof Point) {
-					context.clearRect(point.x, point.y, 5, 5);
-				}
-				else if(point) {
-					opera.postError('lolx');
-				}
-			}
-
-		}
 	}
 };

@@ -1,40 +1,63 @@
-function Tank(pos)
-{
-	this.position = new Vector2(pos.x,pos.y);
-	this.velocity = new Vector2(0,0);
-	this.turretAngle = 0;
-	this.shotPower = 5;
-	this.health = 100;
-	this.weight = 2;
+/**
+ * A Tank which can shoot and blow stuff up!.$. or it's actually more like a static cannon..
+ * @param {Point} pos
+ */
+var Tank = function(pos) {
+	this._position = new Vector2(pos.x, pos.y);
+	this._velocity = new Vector2(0, 0);
+	this._turretAngle = 0;
+	this._health = 100;
 
-	this.healthObj = new PixelText(this.health);
-	this.healthObj.color = 'black';
+	this._PI2 = Math.PI * 2;
+};
 
-	var corners = new Array(
-			new Point(this.position.x-7,this.position.y-8),
-			new Point(this.position.x+14,this.position.y-8),
-			new Point(this.position.x-7,this.position.y+8),
-			new Point(this.position.x+14,this.position.y+8)
-		);
+Tank.prototype = {
+	destroy: function()	{
+		this._health = 0;
+	},
 
-	var prevDrawAngle = 0;
+	/**
+	 * Set turret angle
+	 * @param {Number} angleRads Angle in radians
+	 */
+	setTurretAngle: function(angleRads) {
+		this._turretAngle = angleRads;
+	},
 
-	this.destroy = function()
-	{
-		this.health = ' ';
-		draw();
-	}
+	/**
+	 * Return turret angle
+	 * @return {Number}
+	 */
+	getTurretAngle: function() {
+		return this._turretAngle;
+	},
 
-	this.fire = function(c)
-	{
+	/**
+	 * Return the rectangle around the tank for rendering purproses
+	 * @return {Rect}
+	 */
+	getRect: function() {
+		return new Rect(this._position.x - 10, this._position.y - 20, 20, 20);
+	},
+
+	/**
+	 * Set position of the tank
+	 * @param {Number} x
+	 * @param {Number} y
+	 */
+	setPosition: function(x, y) {
+		this._position = new Vector2(x, y);
+	},
+
+	fire: function(c) {
 		c.save();
-		c.translate(this.position.x,this.position.y-8);
+		c.translate(this._position.x,this._position.y-8);
 
-		var xv = Math.cos(this.turretAngle) * 10;
-		var yv = Math.sin(this.turretAngle) * 10;
+		var xv = Math.cos(this._turretAngle) * 10;
+		var yv = Math.sin(this._turretAngle) * 10;
 		c.translate(xv,yv);
 
-		c.rotate(this.turretAngle);
+		c.rotate(this._turretAngle);
 
 		c.fillStyle = 'yellow';
 
@@ -59,94 +82,46 @@ function Tank(pos)
 		c.fill();
 
 		c.restore();
-	}
+	},
 
-	this.draw = function(c)
-	{
-		c.save();
+	/**
+	 * Render tank
+	 * @param {CanvasRenderingContext2D} context
+	 */
+	render: function(context) {
+		context.save();
 
 		//Draw the bottom of the tank
-		c.translate(this.position.x,this.position.y);
+		context.translate(this._position.x,this._position.y);
 
-		c.fillStyle = 'black';
+		context.fillStyle = 'black';
 
-		c.fillRect(-7,-8,14,8)
+		context.fillRect(-7,-8,14,8);
 
-		c.translate(0,-8);
-
-		//Clear previous position of turret
-		c.save();
-		c.rotate(prevDrawAngle);
-		c.fillStyle = terrain.clearColor;
-		c.fillRect(0,-2,11,4);
-		c.restore();
-
-		if(this.health != ' ')
+		context.translate(0,-8);
+	
+		if(this._health != ' ')
 		{
 			//Draw the cannon
-			c.save();
-			c.fillStyle = 'black';
-			c.rotate(this.turretAngle);
-			c.fillRect(0,-1,10,2);
-			c.restore();
-
-			prevDrawAngle = this.turretAngle;
+			context.save();
+			context.fillStyle = 'black';
+			context.rotate(this._turretAngle);
+			context.fillRect(0,-1,10,2);
+			context.restore();
 		}
 
 		//Draw the turret top
-		c.moveTo(0,0);
-		c.beginPath();
-		c.moveTo(0,0);
-		if(this.health == ' ')
-			c.fillStyle = terrain.clearColor;
-		else
-			c.fillStyle = 'black';
+		context.moveTo(0,0);
+		context.beginPath();
+		context.moveTo(0,0);
 
-		c.arc(0,0,5,0,PI2,false);
-		c.closePath();
-		c.moveTo(0,0);
-		c.fill();
+		context.fillStyle = 'black';
 
-		c.restore();
+		context.arc(0, 0, 5, 0, this._PI2, false);
+		context.closePath();
+		context.moveTo(0,0);
+		context.fill();
+
+		context.restore();
 	}
-
-	this.checkRadius = function()
-	{
-		for(var i = 0; i < 4; i++)
-		{
-			if(ctx.isPointInPath(corners[i].x,corners[i].y))
-				return true;
-		}
-
-		return false;
-	}
-
-	this.checkHit = function(x,y)
-	{
-		var w = tankSprite.width/2;
-		var h = tankSprite.height;
-
-		var x1 = this.position.x - w;
-		var x2 = this.position.x + w;
-
-		var y1 = this.position.y - h;
-		var y1 = this.position.y;
-
-		if(x > x1 && x < x2)
-		{
-			if(y > y1 && y < y2)
-				return true;
-		}
-
-		return false;
-	}
-
-	this.createHitbox = function(c)
-	{
-		c.beginPath();
-
-		c.rect(this.position.x-7,this.position.y-10,14,10)
-
-		c.closePath();
-	}
-}
+};

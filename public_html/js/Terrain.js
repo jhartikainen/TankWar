@@ -22,10 +22,22 @@ var Terrain = function(p, mask) {
 	}
 };
 
+/**
+ * Constant for empty area in mask
+ * @type {Number}
+ */
+Terrain.MASK_EMPTY = 0;
+
+/**
+ * Constant for ground in the terrain mask
+ * @type {Number}
+ */
+Terrain.MASK_GROUND = 1;
+
 Terrain.prototype = {
 	/**
 	 * Render terrain
-	 * @param {CanvasRenderingContext2D} context
+	 * @param {CanvasRenderingContext2D} imageData
 	 */
 	render: function(imageData) {
 		/*for(var i = 0; i < imageData.data.length; i += 4) {
@@ -36,67 +48,66 @@ Terrain.prototype = {
 
 		for(var y = 0; y < this._mask.length; y++) {
 			var xs = this._mask[y];
-			if(!xs) {
-				continue;
-			}
-			
 			for(var x = 0; x < xs.length; x++) {
-				if(xs[x] !== 1) {
-					continue;
-				}
-				
 				var pt = ((imageData.width * y) + x) << 2;
-				imageData.data[pt] = 0xFF;
-				imageData.data[pt + 1] = 0xFF;
-				imageData.data[pt + 2] = 0xFF;
+
+				if(xs[x] === Terrain.MASK_EMPTY) {
+					imageData.data[pt] = 0xFF;
+					imageData.data[pt + 1] = 0x0;
+					imageData.data[pt + 2] = 0x0;
+				}
+				else {
+					imageData.data[pt] = 0xFF;
+					imageData.data[pt + 1] = 0xFF;
+					imageData.data[pt + 2] = 0xFF;
+				}
 			}
 		}
 	},
 
 	/**
-	 * Perform a full render of the terrain
-	 * @param {CanvasRenderingContext2D} context
+	 * Render a rectangle of the terrain
+	 * @param {Object} imageData
+	 * @param {Rect} rect
 	 */
-	fullRender: function(context) {
-		c.beginPath();
-		c.moveTo(this._points[0].x, this._points[0].y);
+	renderRect: function(imageData, rect) {
+		for(var y = rect.y, maxY = rect.y + rect.height; y < maxY; y++) {
+			var xs = this._mask[y];
 
-		for(var i = 1, l = this._points.length; i < l; i++) {
-			c.lineTo(this._points[i].x,this._points[i].y);
+			for(var x = rect.x,  maxX = rect.x + rect.width; x < maxX; x++) {
+				var areaX = x - rect.x;
+				var areaY = y - rect.y;
+				
+				var pt = ((imageData.width * areaY) + areaX) << 2;
+				if(xs[x] === Terrain.MASK_EMPTY) {
+					imageData.data[pt] = 0xFF;
+					imageData.data[pt + 1] = 0x0;
+					imageData.data[pt + 2] = 0x0;
+				}
+				else {
+					imageData.data[pt] = 0xFF;
+					imageData.data[pt + 1] = 0xFF;
+					imageData.data[pt + 2] = 0xFF;
+				}
+			}
 		}
-
-
-		//Create destroyed areas
-		for(var i = 0, l = this._holes.length; i < l; i++) {
-			if(isNaN(this._holes[i].x) || isNaN(this._holes[i].y) || isNaN(this._holes[i].r)) {
-                continue;
-            }
-
-			c.moveTo(this._holes[i].x,this._holes[i].y);
-			c.arc(this._holes[i].x,this._holes[i].y,this._holes[i].r,0,PI2,false);
-		}
-		c.closePath();
 	},
 
 	/**
-	 * Creates the path for the terrain
-	 * @param {Object} c to create the path on
+	 * Does a line intersect with terrain?
+	 * @param {Array} pointList List of points in a line
+	 * @return {Point} Return intersection point or null if no intersection
 	 */
-	createPath: function(c) {
+	lineIntersects: function(pointList) {
+		for(var i = 0; i < pointList.length; i++) {
+			var p = pointList[i];
+			if(this._mask[p.y]) {
+				if(this._mask[p.y][p.x] == Terrain.MASK_GROUND) {
+					return p;
+				}
+			}
+		}
 
-	},
-
-	/**
-	 * Use to blow holes in the terrain
-	 * @param {Object} Point object containing the X/Y location of the explosion
-	 * @param {Number} radius of the explosion
-	 */
-	destroy: function(point,radius) {
-		var h = {
-			x: point.x,
-			y: point.y,
-			r: Number(radius)
-		};
-		this._holes.push(h);
+		return null;
 	}
 };

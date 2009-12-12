@@ -1,10 +1,12 @@
 /**
  * Describes the game terrain
- * @param {Object} p from TerrainCreator
+ * @param {Array} p points that make up the terrain
+ * @param {Array} mask Pixel mask for collisions etc.
  */
-var Terrain = function(p) {
+var Terrain = function(p, mask) {
 	this._points = p
 	this._holes = [];
+	this._mask = mask;
 
 	this._clearColor = 'lightblue';
 
@@ -21,133 +23,41 @@ var Terrain = function(p) {
 };
 
 Terrain.prototype = {
-	getNormalAt: function(x) {
-		var p1,p2;
-
-		for(var i = 0; i < (this.pointCount-1); i++)
-		{
-			if(this._points[i].x <= x && this._points[(i+1)].x > x)
-			{
-				p1 = this._points[i];
-				p2 = this._points[(i+1)];
-				break;
-			}
-		}
-
-		if(p1 && p2)
-		{
-			var v1 = new Vector2(p1.x,p1.y);
-			var v2 = new Vector2(p2.x,p2.y);
-
-			return v1.crossProduct(v2);
-		}
-		else
-			return null;
-	},
-
-	getSurfaceAt: function(x) {
-		var p1,p2;
-
-		for(var i = 0; i < (this.pointCount-1); i++)
-		{
-			if(this._points[i].x <= x && this._points[(i+1)].x > x)
-			{
-				p1 = this._points[i];
-				p2 = this._points[(i+1)];
-				break;
-			}
-		}
-
-		if(p1 && p2)
-		{
-			var v1 = new Vector2(p1.x,p1.y);
-			var v2 = new Vector2(p2.x,p2.y);
-
-			return v1.subtract(v2);
-		}
-		else
-			return null;
-	},
-
-	/**
-	 * Return lines from terrain, ie. connected points
-	 * @return {Array}
-	 */
-	getLines: function() {
-		var lines = [];
-		opera.postError(this._points.length - 1);
-		for(var i = 0, len = this._points.length - 1; i < len; i++) {
-			lines.push({
-				start: this._points[i],
-				end: this._points[i + 1]
-			});
-		}
-
-		opera.postError(lines.length);
-		return lines;
-	},
-
-	getPoints: function() {
-		return this._points;
-	},
-
-	getHoles: function() {
-		return this._holes;
-	},
-
-	getLastHit: function() {
-		if(this._holes.length > 0)
-			return this._holes[(this._holes.length-1)];
-		else
-			return null;
-	},
-
-	clean: function() {
-		this._holes = [];
-	},
-
-	createLastHitPath: function(c) {
-		c.beginPath();
-		var h = this.getLastHit();
-		if(h != null)
-			c.moveTo(h.x,h.y);
-
-		if(h != null)
-		{
-			if(!isNaN(h.x) && !isNaN(h.y) && !isNaN(h.r))
-			{
-				c.moveTo(h.x,h.y);
-				//opera.postError(h.x + ' ' + h.y + ' ' + h.r);
-				c.arc(h.x,h.y,h.r,0,PI2,false);
-			}
-		}
-		c.closePath();
-	},
-
-	removeLastHit: function() {
-		this._holes.pop();
-	},
-
 	/**
 	 * Render terrain
 	 * @param {CanvasRenderingContext2D} context
 	 */
-	render: function(context) {
-		context.fillStyle = '#5c4033';
-		context.fillRect(0,0, context.canvas.width, context.canvas.height);
+	render: function(imageData) {
+		/*for(var i = 0; i < imageData.data.length; i += 4) {
+			imageData.data[i] = 0xFF;
+			imageData.data[i + 1] = 0;
+			imageData.data[i + 2] = 0xFF;
+		}*/
 
-		context.fillStyle = this._clearColor;
-
-		this.createPath(context);
-
-		context.fill();
+		for(var y = 0; y < this._mask.length; y++) {
+			var xs = this._mask[y];
+			if(!xs) {
+				continue;
+			}
+			
+			for(var x = 0; x < xs.length; x++) {
+				if(xs[x] !== 1) {
+					continue;
+				}
+				
+				var pt = ((imageData.width * y) + x) << 2;
+				imageData.data[pt] = 0xFF;
+				imageData.data[pt + 1] = 0xFF;
+				imageData.data[pt + 2] = 0xFF;
+			}
+		}
 	},
 
 	/**
-	 * Creates the path for the terrain
-	 * @param {Object} c to create the path on
+	 * Perform a full render of the terrain
+	 * @param {CanvasRenderingContext2D} context
 	 */
-	createPath: function(c) {
+	fullRender: function(context) {
 		c.beginPath();
 		c.moveTo(this._points[0].x, this._points[0].y);
 
@@ -166,6 +76,14 @@ Terrain.prototype = {
 			c.arc(this._holes[i].x,this._holes[i].y,this._holes[i].r,0,PI2,false);
 		}
 		c.closePath();
+	},
+
+	/**
+	 * Creates the path for the terrain
+	 * @param {Object} c to create the path on
+	 */
+	createPath: function(c) {
+
 	},
 
 	/**

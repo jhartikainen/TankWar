@@ -3,8 +3,8 @@
  * @param {Point} pos
  */
 var Tank = function(pos) {
-	this._position = new Vector2(pos.x, pos.y);
-	this._velocity = new Vector2(0, 0);
+	this.position = new Vector2(pos.x, pos.y);
+	this.velocity = new Vector2(0, 0);
 	this._turretAngle = 0;
 	this._health = 100;
 
@@ -37,7 +37,7 @@ Tank.prototype = {
 	 * @return {Rect}
 	 */
 	getRect: function() {
-		return new Rect(this._position.x - 10, this._position.y - 20, 20, 20);
+		return new Rect(this.position.x - 11, this.position.y - 20, 22, 20);
 	},
 
 	/**
@@ -46,12 +46,12 @@ Tank.prototype = {
 	 * @param {Number} y
 	 */
 	setPosition: function(x, y) {
-		this._position = new Vector2(x, y);
+		this.position = new Vector2(x, y);
 	},
 
 	fire: function(c) {
 		c.save();
-		c.translate(this._position.x,this._position.y-8);
+		c.translate(this.position.x,this.position.y-8);
 
 		var xv = Math.cos(this._turretAngle) * 10;
 		var yv = Math.sin(this._turretAngle) * 10;
@@ -92,7 +92,7 @@ Tank.prototype = {
 		context.save();
 
 		//Draw the bottom of the tank
-		context.translate(this._position.x,this._position.y);
+		context.translate(this.position.x, this.position.y);
 
 		context.fillStyle = 'black';
 

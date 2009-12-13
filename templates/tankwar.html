@@ -2,22 +2,34 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-		<title>TankWar 2.0&copy;</title>
-        <script type="text/javascript" src="js/Math.js"></script>
-        <script type="text/javascript" src="js/Size.js"></script>
-        <script type="text/javascript" src="js/Point.js"></script>
-        <script type="text/javascript" src="js/Rect.js"></script>
-        <script type="text/javascript" src="js/Geom.js"></script>
-        <script type="text/javascript" src="js/Vector2.js"></script>
-        <script type="text/javascript" src="js/Tank.js"></script>
-        <script type="text/javascript" src="js/TerrainGenerator.js"></script>
-        <script type="text/javascript" src="js/Terrain.js"></script>
-        <script type="text/javascript" src="js/TankWar.js"></script>
+		<title>TankWar 2.0&copy;: The reckoning</title>        
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/dojo/1.4/dojo/dojo.xd.js"></script>
+        <script type="text/javascript" src="js/Loader.js"></script>
+
+        <style type="text/css">
+            canvas {
+                background: url(img/sky.jpg) no-repeat;
+            }
+        </style>
         <script type="text/javascript">
         var requestPath = '{{data.path}}cometd';
         window.onload = function() {
-            var app = new TankWar();
-            app.run();
+            var loader = new Loader();
+
+            var log = dojo.byId('log');
+            dojo.connect(loader, 'onAssetLoaded', function() {
+                log.innerHTML = loader.getLoadedCount() + ' / ' + loader.getLoadingCount();
+            });
+
+            dojo.connect(loader, 'onAllAssetsLoaded', function() {
+                var app = new TankWar();
+                app.run();
+            });
+
+            loader.loadAssets({
+                images: ['ground_tile.jpg', 'sky.jpg'],
+                classes: ['Math', 'Size', 'Point', 'Rect', 'Geom', 'Vector2', 'Tank', 'TerrainGenerator', 'Terrain', 'Simulation', 'TankWar']
+            });
         };
         </script>
         <div id="log"></div>

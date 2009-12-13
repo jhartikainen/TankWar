@@ -55,35 +55,45 @@ TankWar.prototype = {
 			tank.render(context);
 		};
 
-		context.fillStyle = 'lightblue';
-		context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+		canvas.onmousemove = function(ev) {
+			var x = ev.offsetX || ev.clientX;
+			var y = ev.offsetY || ev.clientY;
 
-		var imageData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
-		terrain.render(imageData);
-		context.putImageData(imageData, 0, 0);
+			var p = tank.position;
+			var angle = Math.atan2(-(p.y - y), -(p.x - x));
+			tank.setTurretAngle(angle);
+		};
+
+		var img = new Image();
+		img.src = 'img/ground_tile.jpg';
+		var pattern = context.createPattern(img, 'repeat');
+		terrain.setPattern(pattern);
+
+		var img2 = new Image();
+		img2.src = 'img/sky.jpg';
+		terrain.setBackground(img2);
+
+		terrain.render(context);
 
 		var canvasWidth = canvas.width;
 
 		var tank = new Tank(new Point(100, 100));
-		tank.setTurretAngle(Math.deg2Rad(0));
 		tank.render(context);
 
-		var angle = 180;
+		var sim = new Simulation(terrain);
+		sim._objects.push(tank);
 		setInterval(function(){
-			angle++;
-			if(angle == 360) {
-				angle = 0;
+			var result = sim.step(0.1);
+			var dirtyRects = result.dirtyRects;
+			if(dirtyRects.length == 0) {
+				dirtyRects.push(tank.getRect());
 			}
-
-			tank.setTurretAngle(Math.deg2Rad(angle));
-			if(angle == 0) {
-				angle = 180;
+			for(var i = 0; i < result.dirtyRects.length; i++) {
+				var imageData = context.getImageData(dirtyRects[i].x, dirtyRects[i].y, dirtyRects[i].width, dirtyRects[i].height);
+				terrain.renderRect(imageData, dirtyRects[i]);
+				context.putImageData(imageData, dirtyRects[i].x, dirtyRects[i].y);
 			}
-
-			var rect = tank.getRect();
-			var imageData = context.getImageData(rect.x, rect.y, rect.width, rect.height);
-			terrain.renderRect(imageData, rect);
-			context.putImageData(imageData, rect.x,  rect.y, 0, 0, rect.width, rect.height);
+			
 			tank.render(context);
 		}, 10);
 		

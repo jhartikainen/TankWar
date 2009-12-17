@@ -3,6 +3,16 @@
  */
 var Geom = {
 	/**
+	 * Calculate angle of a line between two points
+	 * @param {Point} startPoint
+	 * @param {Point} endPoint
+	 * @return {Number} Angle in radians
+	 */
+	lineAngle: function(startPoint, endPoint) {
+		return Math.atan2(-(startPoint.y - endPoint.y), -(startPoint.x - endPoint.x));
+	},
+	
+	/**
 	 * Plot a line between two points, returning list of the points in the line.
 	 *
 	 * Implements optimized Bresenham's algorithm.

@@ -11,13 +11,16 @@ TankWar.prototype = {
 	run: function() {
 		var mapSize = new Size(1000, 400);
 		var generator = new TerrainGenerator();
-		var terrain = generator.generate(mapSize, 300, 14, 100, -100);
 
-		var tiles = [];
-		var tileDivisor = 25;
-		for(var i = 0; i < tileDivisor; i++) {
-			tiles[i] = new Array(tileDivisor);
-		}
+		var terrain = generator.generate(mapSize, 300, 14, 100, -100);
+		var img = new Image();
+		img.src = 'img/ground_tile.jpg';
+		var pattern = context.createPattern(img, 'repeat');
+		terrain.setPattern(pattern);
+
+		var img2 = new Image();
+		img2.src = 'img/sky.jpg';
+		terrain.setBackground(img2);
 
 		var canvas = document.createElement('canvas');
 		canvas.width = mapSize.getWidth();
@@ -28,17 +31,21 @@ TankWar.prototype = {
 		document.body.appendChild(canvas);
 		var context = canvas.getContext('2d');
 
-		var line1 = [
-			new Vector2(0, 0),
-			new Vector2(10, 0)
-		];
+		var tank = new Tank(new Point(100, 100));
+		tank.render(context);
 
-		var mode = 0;
+		var sim = new Simulation(terrain);
+		var renderer = new Renderer(context, terrain);
+		sim.addObject(tank);
+
 		canvas.onclick = function(ev) {
 			var x = ev.offsetX || ev.clientX;
 			var y = ev.offsetY || ev.clientY;
 
-
+			tank.shoot();
+			var shell = new Shell(tank.position);
+			shell.launch(tank.getTurretAngle(), 10);
+			sim.addObject(shell);
 			/*line1[mode].x = x;
 			line1[mode].y = y;
 			mode++;
@@ -46,41 +53,33 @@ TankWar.prototype = {
 				mode = 0;
 				drawLines();
 			}*/
-			var rect = tank.getRect();
+			/*var rect = tank.getRect();
 			var imageData = context.getImageData(rect.x, rect.y, rect.width, rect.height);
 			terrain.renderRect(imageData, rect);
 			context.putImageData(imageData, rect.x,  rect.y, 0, 0, rect.width, rect.height);
 
 			tank.setPosition(x, y);
-			tank.render(context);
+			tank.render(context);*/
 		};
 
 		canvas.onmousemove = function(ev) {
 			var x = ev.offsetX || ev.clientX;
 			var y = ev.offsetY || ev.clientY;
-
-			var p = tank.position;
-			var angle = Math.atan2(-(p.y - y), -(p.x - x));
+			
+			var angle = Geom.lineAngle(tank.position, new Point(x, y));
 			tank.setTurretAngle(angle);
 		};
 
-		var img = new Image();
-		img.src = 'img/ground_tile.jpg';
-		var pattern = context.createPattern(img, 'repeat');
-		terrain.setPattern(pattern);
 
-		var img2 = new Image();
-		img2.src = 'img/sky.jpg';
-		terrain.setBackground(img2);
+		//terrain.render(context);
 
-		terrain.render(context);
-
-		var canvasWidth = canvas.width;
+		/*var canvasWidth = canvas.width;
 
 		var tank = new Tank(new Point(100, 100));
 		tank.render(context);
 
 		var sim = new Simulation(terrain);
+		var renderer = new Renderer(context, terrain);
 		sim._objects.push(tank);
 		setInterval(function(){
 			var result = sim.step(0.1);
@@ -94,9 +93,9 @@ TankWar.prototype = {
 				context.putImageData(imageData, dirtyRects[i].x, dirtyRects[i].y);
 			}
 			
-			tank.render(context);
+			tank.render(renderer);
 		}, 10);
-		
+*/
 		var drawLines = function() {
 			//terrain.render(imageData);
 			/*context.strokeStyle = 'black';

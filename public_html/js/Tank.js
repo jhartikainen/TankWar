@@ -86,9 +86,10 @@ Tank.prototype = {
 
 	/**
 	 * Render tank
-	 * @param {CanvasRenderingContext2D} context
+	 * @param {Renderer} renderer
 	 */
-	render: function(context) {
+	render: function(renderer) {
+		var context = renderer.getContext();				
 		context.save();
 
 		//Draw the bottom of the tank

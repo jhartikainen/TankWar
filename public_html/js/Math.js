@@ -1,4 +1,9 @@
 /**
+ * Math utility functions
+ *
+ */
+
+/**
  * Convert degrees to radians
  * @param {Number} degrees
  * @return {Number}

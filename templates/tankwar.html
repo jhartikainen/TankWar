@@ -5,12 +5,10 @@
 		<title>TankWar 2.0&copy;: The reckoning</title>        
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/dojo/1.4/dojo/dojo.xd.js"></script>
         <script type="text/javascript" src="js/Loader.js"></script>
-
-        <style type="text/css">
-            canvas {
-                background: url(img/sky.jpg) no-repeat;
-            }
-        </style>
+        <script type="text/javascript" src="js/Terrain.js"></script>
+        <script type="text/javascript" src="js/TankWar.js"></script>
+        <script type="text/javascript" src="js/Geom.js"></script>
+      
         <script type="text/javascript">
         var requestPath = '{{data.path}}cometd';
         window.onload = function() {
@@ -28,7 +26,7 @@
 
             loader.loadAssets({
                 images: ['ground_tile.jpg', 'sky.jpg'],
-                classes: ['Math', 'Size', 'Point', 'Rect', 'Geom', 'Vector2', 'Tank', 'TerrainGenerator', 'Terrain', 'Simulation', 'TankWar']
+                classes: ['Math', 'Size', 'Point', 'Rect', 'Vector2', 'Tank', 'TerrainGenerator', 'Simulation', 'Renderer', 'Shell']
             });
         };
         </script>

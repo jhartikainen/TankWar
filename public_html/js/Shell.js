@@ -31,13 +31,20 @@ Shell.prototype = {
 		if(this._smokeInterval >= 1) {
 			this._smokeInterval = 0;
 
-			simulation.addObject(new Smoke(this.position));
+			//simulation.addObject(new Smoke(this.position));
 		}
 	},
 
-	render: function(renderer) {
-		if(this._renderSmoke) {
+	getRect: function() {
+		return new Rect(0, 0, 5, 5);
+	},
 
+	render: function(context) {
+		context.save();
+		context.fillStyle = 'red';
+		context.fillRect(this.position.x, this.position.y, 5, 5);
+		context.restore();
+		if(this._renderSmoke) {
 		}
 	}
 };

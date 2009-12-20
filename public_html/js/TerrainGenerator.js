@@ -56,7 +56,7 @@ TerrainGenerator.prototype = {
 			}
 		}
 
-		return new Terrain(points, mask);
+		return new Terrain(points, mask, size);
 
 		function getAHeight()
 		{

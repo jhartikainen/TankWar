@@ -72,6 +72,10 @@ Simulation.prototype = {
 		this._objects = this._objects.concat(this._newObjects);
 		this._newObjects = [];
 
+		var terrainSize = this._terrain.getSize();
+		var terrainWidth = terrainSize.getWidth(),
+			terrainHeight = terrainSize.getHeight();
+		
 		//Perform the simulation step
 		for(var i = 0, objectCount = this._objects.length; i < objectCount; i++) {
 			var object = this._objects[i];
@@ -89,10 +93,13 @@ Simulation.prototype = {
 			//Round down
 			newX = ~~newX;
 			newY = ~~newY;
-			
-			//Determine if the object collided with ground
-			var line = Geom.plotLine(object.position.x, object.position.y, newX, newY);
-			var collision = this._terrain.lineIntersects(line);
+
+			var collision;
+			if(terrainWidth > newX && newX >= 0 && terrainHeight > newY && newY >= 0) {
+				//Determine if the object collided with ground
+				var line = Geom.plotLine(object.position.x, object.position.y, newX, newY);
+				collision = this._terrain.lineIntersects(line);
+			}
 
 			if(collision) {
 				result.dirtyRects.push(object.getRect());

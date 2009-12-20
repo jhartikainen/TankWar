@@ -49,8 +49,8 @@ Tank.prototype = {
 		this.position = new Vector2(x, y);
 	},
 
-	fire: function(c) {
-		c.save();
+	shoot: function() {
+		/*c.save();
 		c.translate(this.position.x,this.position.y-8);
 
 		var xv = Math.cos(this._turretAngle) * 10;
@@ -81,15 +81,18 @@ Tank.prototype = {
 		c.closePath();
 		c.fill();
 
-		c.restore();
+		c.restore();*/
+	},
+
+	work: function(timeDelta, simulation) {
+		
 	},
 
 	/**
 	 * Render tank
-	 * @param {Renderer} renderer
+	 * @param {CanvasRenderingContext2D} context
 	 */
-	render: function(renderer) {
-		var context = renderer.getContext();				
+	render: function(context) {						
 		context.save();
 
 		//Draw the bottom of the tank

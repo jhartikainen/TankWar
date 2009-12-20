@@ -10,6 +10,15 @@ TankWar.prototype = {
 	 */
 	run: function() {
 		var mapSize = new Size(1000, 400);
+		var canvas = document.createElement('canvas');
+		canvas.width = mapSize.getWidth();
+		canvas.height = mapSize.getHeight();
+		canvas.style.width = '1000px';
+		canvas.style.height = '400px';
+
+		document.body.appendChild(canvas);
+		var context = canvas.getContext('2d');
+
 		var generator = new TerrainGenerator();
 
 		var terrain = generator.generate(mapSize, 300, 14, 100, -100);
@@ -22,30 +31,42 @@ TankWar.prototype = {
 		img2.src = 'img/sky.jpg';
 		terrain.setBackground(img2);
 
-		var canvas = document.createElement('canvas');
-		canvas.width = mapSize.getWidth();
-		canvas.height = mapSize.getHeight();
-		canvas.style.width = '1000px';
-		canvas.style.height = '400px';
+		var renderer = new Renderer(context, terrain);
 
-		document.body.appendChild(canvas);
-		var context = canvas.getContext('2d');
-
+		terrain.render(context);
 		var tank = new Tank(new Point(100, 100));
-		tank.render(context);
 
 		var sim = new Simulation(terrain);
-		var renderer = new Renderer(context, terrain);
 		sim.addObject(tank);
+		renderer.addToScene(tank);
 
+		var worker = function(){
+			var result = sim.step(0.1);
+			var dirtyRects = result.dirtyRects;
+			if(dirtyRects.length == 0) {
+				dirtyRects.push(tank.getRect());
+			}
+			for(var i = 0; i < result.dirtyRects.length; i++) {
+				renderer.markDirty(result.dirtyRects[i]);
+			}
+
+			
+			renderer.prepareScene();
+			renderer.renderScene();
+			setTimeout(worker, 10);
+		};
+
+		worker();
+var shell;
 		canvas.onclick = function(ev) {
 			var x = ev.offsetX || ev.clientX;
 			var y = ev.offsetY || ev.clientY;
 
 			tank.shoot();
-			var shell = new Shell(tank.position);
-			shell.launch(tank.getTurretAngle(), 10);
+			shell = new Shell(tank.position);
+			shell.launch(tank.getTurretAngle(), 100);
 			sim.addObject(shell);
+			renderer.addToScene(shell);
 			/*line1[mode].x = x;
 			line1[mode].y = y;
 			mode++;

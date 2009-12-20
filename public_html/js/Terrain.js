@@ -3,10 +3,11 @@
  * @param {Array} p points that make up the terrain
  * @param {Array} mask Pixel mask for collisions etc.
  */
-var Terrain = function(p, mask) {
+var Terrain = function(p, mask, size) {
 	this._points = p;
 	this._holes = [];
 	this._mask = mask;
+	this._size = size;
 };
 
 /**
@@ -22,6 +23,10 @@ Terrain.MASK_EMPTY = 0;
 Terrain.MASK_GROUND = 1;
 
 Terrain.prototype = {
+	getSize: function() {
+		return this._size;
+	},
+	
 	setPattern: function(pattern) {
 		this._pattern = pattern;
 	},
@@ -88,6 +93,10 @@ Terrain.prototype = {
 	 * @return {Number} Terrain mask constant
 	 */
 	get: function(x, y) {
+		if(this._mask[y] === undefined || this._mask[y][x] === undefined) {
+			return undefined;
+		}
+		
 		return this._mask[y][x];
 	},
 	
@@ -122,6 +131,7 @@ Terrain.prototype = {
 	lineIntersects: function(pointList) {
 		for(var i = 0; i < pointList.length; i++) {
 			var p = pointList[i];
+						
 			if(this._mask[p.y][p.x] == Terrain.MASK_GROUND) {
 				return p;
 			}			

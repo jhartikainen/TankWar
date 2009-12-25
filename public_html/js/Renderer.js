@@ -42,9 +42,12 @@ Renderer.prototype = {
 		for(var i = 0; i < this._dirtyRects.length; i++) {
 			var rect = this._dirtyRects[i];
 			if(terrainRect.containsRect(rect)) {
-			    var imageData = this._context.getImageData(rect.x, rect.y, rect.width, rect.height);
-				this._terrain.renderRect(imageData, rect);
-				this._context.putImageData(imageData, rect.x, rect.y);
+				var x = ~~rect.x,
+				    y = ~~rect.y;
+
+			    var imageData = this._context.getImageData(x, y, rect.width, rect.height);
+				this._terrain.renderRect(imageData, new Rect(x, y, rect.width, rect.height));
+				this._context.putImageData(imageData, x, y);
 			}
 		}
 

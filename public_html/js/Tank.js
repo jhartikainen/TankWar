@@ -96,7 +96,7 @@ Tank.prototype = {
 		context.save();
 
 		//Draw the bottom of the tank
-		context.translate(this.position.x, this.position.y);
+		context.translate(~~this.position.x, ~~this.position.y);
 
 		context.fillStyle = 'black';
 

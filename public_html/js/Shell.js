@@ -42,7 +42,7 @@ Shell.prototype = {
 	render: function(context) {
 		context.save();
 		context.fillStyle = 'red';
-		context.fillRect(this.position.x, this.position.y, 5, 5);
+		context.fillRect(~~this.position.x, ~~this.position.y, 5, 5);
 		context.restore();
 		if(this._renderSmoke) {
 		}

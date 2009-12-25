@@ -79,10 +79,17 @@ Simulation.prototype = {
 		//Perform the simulation step
 		for(var i = 0, objectCount = this._objects.length; i < objectCount; i++) {
 			var object = this._objects[i];
+
+			//Remove out-of-bounds objects
+			if(object.position.x < 0 || object.position.y > terrainWidth) {
+				this.removeObject(object);
+				continue;
+			}
+
 			object.work(timeDelta, this);
 
 			//Calculate effect of gravity if object is in air
-			if(this._terrain.get(object.position.x, object.position.y + 1) === Terrain.MASK_EMPTY) {
+			if(this._terrain.get(~~object.position.x, ~~object.position.y + 1) === Terrain.MASK_EMPTY) {
 				object.velocity.y += (this._gravity * timeDelta);
 			}
 

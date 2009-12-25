@@ -43,9 +43,9 @@ TankWar.prototype = {
 		var worker = function(){
 			var result = sim.step(0.1);
 			var dirtyRects = result.dirtyRects;
-			if(dirtyRects.length == 0) {
-				dirtyRects.push(tank.getRect());
-			}
+
+			dirtyRects.push(tank.getRect());
+			
 			for(var i = 0; i < result.dirtyRects.length; i++) {
 				renderer.markDirty(result.dirtyRects[i]);
 			}
@@ -64,7 +64,7 @@ var shell;
 
 			tank.shoot();
 			shell = new Shell(tank.position);			
-			shell.launch(tank.getTurretAngle(), 100);
+			shell.launch(tank.getTurretAngle(), tank.position.distanceTo(new Vector2(x, y)));
 			sim.addObject(shell);
 			renderer.addToScene(shell);
 			/*line1[mode].x = x;

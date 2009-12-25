@@ -20,7 +20,7 @@ Shell.prototype = {
 	launch: function(angle, power) {
 		var xv = Math.cos(angle) * power;
 		var yv = Math.sin(angle) * power;
-
+		
 		this.velocity = new Vector2(xv, yv);
 	},
 
@@ -36,7 +36,7 @@ Shell.prototype = {
 	},
 
 	getRect: function() {
-		return new Rect(0, 0, 5, 5);
+		return new Rect(this.position.x, this.position.y, 5, 5);
 	},
 
 	render: function(context) {

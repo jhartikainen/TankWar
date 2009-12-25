@@ -90,14 +90,14 @@ Simulation.prototype = {
 			var newX = object.position.x + (object.velocity.x * timeDelta);
 			var newY = object.position.y + (object.velocity.y * timeDelta);
 
-			//Round down
-			newX = ~~newX;
-			newY = ~~newY;
+			//Correct X and Y (by rounding down) for collision and bounds checking
+			var correctedX = ~~newX;
+			var correctedY = ~~newY;
 
 			var collision;
-			if(terrainWidth > newX && newX >= 0 && terrainHeight > newY && newY >= 0) {
+			if(terrainWidth > correctedX && correctedX >= 0 && terrainHeight > correctedY && correctedY >= 0) {
 				//Determine if the object collided with ground
-				var line = Geom.plotLine(object.position.x, object.position.y, newX, newY);
+				var line = Geom.plotLine(~~object.position.x, ~~object.position.y, correctedX, correctedY);
 				collision = this._terrain.lineIntersects(line);
 			}
 

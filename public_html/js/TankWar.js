@@ -63,7 +63,7 @@ var shell;
 			var y = ev.offsetY || ev.clientY;
 
 			tank.shoot();
-			shell = new Shell(tank.position);
+			shell = new Shell(tank.position);			
 			shell.launch(tank.getTurretAngle(), 100);
 			sim.addObject(shell);
 			renderer.addToScene(shell);
@@ -83,6 +83,7 @@ var shell;
 			tank.render(context);*/
 		};
 
+		var log = dojo.byId('log');
 		canvas.onmousemove = function(ev) {
 			var x = ev.offsetX || ev.clientX;
 			var y = ev.offsetY || ev.clientY;

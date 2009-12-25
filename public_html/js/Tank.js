@@ -88,6 +88,10 @@ Tank.prototype = {
 		
 	},
 
+	collision: function(terrain) {
+		//no effect
+	},
+	
 	/**
 	 * Render tank
 	 * @param {CanvasRenderingContext2D} context

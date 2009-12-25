@@ -3,6 +3,8 @@
  */
 var CanvasRenderingContext2D = {
 	fillStyle: '',
+	canvas: '',
+	drawImage: function(image, x, y) { },
 	fillRect: function(x, y, width, height) { },
 	getImageData: function(x, y, width, height) { },
 	putImageData: function(x, y, dataX, dataY, dataWidth, dataHeight) { },

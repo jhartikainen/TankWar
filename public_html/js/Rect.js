@@ -19,22 +19,22 @@ Rect.prototype = {
 	 */
 	containsRect: function(rect) {
 		if(rect.x + rect.width > this.x + this.width) {
-			console.log('FALSE');
+			//console.log('FALSE');
 			return false;
 		}
 
 		if(rect.x < this.x) {
-			console.log('FALSE');
+			//console.log('FALSE');
 			return false;
 		}
 
 		if(rect.y + rect.height > this.y + this.height) {
-			console.log('FALSE');
+			//console.log('FALSE');
 			return false;
 		}
 
 		if(rect.y < this.y) {
-			console.log('FALSE');
+			//console.log('FALSE');
 			return false;
 		}
 

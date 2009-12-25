@@ -89,7 +89,7 @@ Simulation.prototype = {
 			object.work(timeDelta, this);
 
 			//Calculate effect of gravity if object is in air
-			if(this._terrain.get(~~object.position.x, ~~object.position.y + 1) === Terrain.MASK_EMPTY) {
+			if(this._terrain.get(~~object.position.x, ~~object.position.y + 1) & Terrain.MASK_EMPTY) {
 				object.velocity.y += (this._gravity * timeDelta);
 			}
 
@@ -114,6 +114,12 @@ Simulation.prototype = {
 				object.position.y = collision.y;
 				object.velocity.y = 0;
 				object.velocity.x = 0;
+
+				var rect = object.collision(this._terrain, this);
+				//Collision result may return a dirty rect
+				if(rect) {
+					result.dirtyRects.push(rect);
+				}
 			}
 			else if(newX != object.position.x || newY != object.position.y) {
 				result.dirtyRects.push(object.getRect());

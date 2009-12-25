@@ -57,33 +57,22 @@ TankWar.prototype = {
 		};
 
 		worker();
-var shell;
+
 		canvas.onclick = function(ev) {
 			var x = ev.offsetX || ev.clientX;
 			var y = ev.offsetY || ev.clientY;
 
 			tank.shoot();
-			shell = new Shell(tank.position);			
+			var shell = new Shell(new Vector2(tank.position.x, tank.position.y - 5));			
 			shell.launch(tank.getTurretAngle(), tank.position.distanceTo(new Vector2(x, y)));
 			sim.addObject(shell);
-			renderer.addToScene(shell);
-			/*line1[mode].x = x;
-			line1[mode].y = y;
-			mode++;
-			if(mode > 1) {
-				mode = 0;
-				drawLines();
-			}*/
-			/*var rect = tank.getRect();
-			var imageData = context.getImageData(rect.x, rect.y, rect.width, rect.height);
-			terrain.renderRect(imageData, rect);
-			context.putImageData(imageData, rect.x,  rect.y, 0, 0, rect.width, rect.height);
-
-			tank.setPosition(x, y);
-			tank.render(context);*/
+			renderer.addToScene(shell);		
 		};
 
 		var log = dojo.byId('log');
+		dojo.connect(sim, 'addObject', function() {
+			log.innerHTML = 'Sim objects: ' + (sim._objects.length + sim._newObjects.length);
+		});
 		canvas.onmousemove = function(ev) {
 			var x = ev.offsetX || ev.clientX;
 			var y = ev.offsetY || ev.clientY;

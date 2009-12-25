@@ -24,6 +24,17 @@ Shell.prototype = {
 		this.velocity = new Vector2(xv, yv);
 	},
 
+	/**
+	 * Collision with terrain callback
+	 * @param {Terrain} terrain
+	 * @param {Simulation} simulation
+	 * @return {Rect} dirty rect
+	 */
+	collision: function(terrain, simulation) {
+		simulation.removeObject(this);
+		return terrain.destroy(this.position, 10);
+	},
+
 	work: function(timeDelta, simulation) {
 		this._smokeInterval += timeDelta;
 

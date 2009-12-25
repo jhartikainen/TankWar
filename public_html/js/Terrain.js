@@ -14,13 +14,19 @@ var Terrain = function(p, mask, size) {
  * Constant for empty area in mask
  * @type {Number}
  */
-Terrain.MASK_EMPTY = 0;
+Terrain.MASK_EMPTY = 0x1;
 
 /**
  * Constant for ground in the terrain mask
  * @type {Number}
  */
-Terrain.MASK_GROUND = 1;
+Terrain.MASK_GROUND = 0x2;
+
+/**
+ * Empty area that used to be ground (usually something that was destroyed in an explosion)
+ * @type {Number}
+ */
+Terrain.MASK_DESTROYED = 0x4;
 
 Terrain.prototype = {
 	getSize: function() {
@@ -34,7 +40,27 @@ Terrain.prototype = {
 	setBackground: function(image) {
 		this._background = image;
 	},
-	
+
+	/**
+	 * Destroy terrain at point with specific blast radius
+	 * @param {Point} midpoint
+	 * @param {Number} radius
+	 * @return {Rect} Rectangle which can be used for marking areas dirty for re-rendering after destroy
+	 */
+	destroy: function(midpoint, radius) {
+		var points = Geom.plotFilledCircle(midpoint, radius);
+		for(var i = 0; i < points.length; i++) {
+			var point = points[i];
+			var mask = this._mask[point.y][point.x];
+
+			if(mask & Terrain.MASK_GROUND) {
+				this._mask[point.y][point.x] = Terrain.MASK_EMPTY | Terrain.MASK_DESTROYED;
+			}
+		}
+
+		return new Rect(midpoint.x - radius, midpoint.y - radius, radius * 2, radius * 2);
+	},
+
 	/**
 	 * Render terrain
 	 * @param {CanvasRenderingContext2D} context
@@ -116,9 +142,16 @@ Terrain.prototype = {
 				var pt = ((imageData.width * areaY) + areaX) << 2;
 				var scaledPt = ((this._imageData.width * y) + x) << 2;
 
-				imageData.data[pt] = this._imageData.data[scaledPt];
-				imageData.data[pt + 1] = this._imageData.data[scaledPt + 1];
-				imageData.data[pt + 2] = this._imageData.data[scaledPt + 2];
+				if(this._mask[y][x] & Terrain.MASK_DESTROYED) {
+					imageData.data[pt] = 0xFF;
+					imageData.data[pt + 1] = 0xFF;
+					imageData.data[pt + 2] = 0xFF;
+				}
+				else {
+					imageData.data[pt] = this._imageData.data[scaledPt];
+					imageData.data[pt + 1] = this._imageData.data[scaledPt + 1];
+					imageData.data[pt + 2] = this._imageData.data[scaledPt + 2];
+				}
 			}
 		}
 	},
@@ -132,7 +165,8 @@ Terrain.prototype = {
 		for(var i = 0; i < pointList.length; i++) {
 			var p = pointList[i];
 						
-			if(this._mask[p.y][p.x] == Terrain.MASK_GROUND) {
+			if(this._mask[p.y][p.x] & Terrain.MASK_GROUND) {
+				console.log(this._mask[p.y][p.x]);
 				return p;
 			}			
 		}

@@ -85,5 +85,54 @@ var Geom = {
 		}
 
 		return points;
+	},
+
+	/**
+	 * Plot a filled circle using modified Midpoint Circle Algorithm
+	 *
+	 * Stolen from wikipedia
+	 *
+	 * @param {Point} point
+	 * @param {Number} radius
+	 * @return {Array} of {Point}s
+	 */
+	plotFilledCircle: function(point, radius) {
+		var points = [];
+
+		var x0 = point.x,
+			y0 = point.y;
+		
+		var f = 1 - radius;
+		var ddF_x = 1;
+		var ddF_y = -2 * radius;
+		var x = 0;
+		var y = radius;
+
+		points = points.concat(
+			Geom.plotLine(x0, y0 + radius, x0, y0 - radius),
+			Geom.plotLine(x0 + radius, y0, x0 - radius, y0)
+		);
+
+		while(x < y) {
+			// ddF_x == 2 * x + 1;
+			// ddF_y == -2 * y;
+			// f == x*x + y*y - radius*radius + 2*x - y + 1;
+			if(f >= 0) {
+				y--;
+				ddF_y += 2;
+				f += ddF_y;
+			}
+			x++;
+			ddF_x += 2;
+			f += ddF_x;
+			points = points.concat(
+				Geom.plotLine(x0 + x, y0 + y, x0 - x, y0 + y),
+				Geom.plotLine(x0 + x, y0 - y, x0 - x, y0 - y),
+				Geom.plotLine(x0 + y, y0 + x, x0 - y, y0 + x),
+				Geom.plotLine(x0 + y, y0 - x, x0 - y, y0 - x)
+			);
+		}
+
+		return points;
 	}
 };

@@ -107,7 +107,8 @@ Simulation.prototype = {
 
 			var collision;
 			//Collisions can only happen if the object is inside the map horizontally, and is not "above" the map
-			if(terrainWidth > correctedX && correctedX >= 0 && correctedY >= 0) {
+			//Also, the check is only performed if the object is actually moving
+			if(!(object.velocity.x == 0 && object.velocity.y == 0) && terrainWidth > correctedX && correctedX >= 0 && correctedY >= 0) {
 				//Determine if the object collided with ground
 				var line = Geom.plotLine(correctOldX, correctOldY, correctedX, correctedY);
 				line.push({

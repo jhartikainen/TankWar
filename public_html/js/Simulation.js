@@ -62,7 +62,7 @@ Simulation.prototype = {
 		for(var i = 0; i < this._deadObjects.length; i++) {
 			var index = this._objects.indexOf(this._deadObjects[i]);
 			if(index > -1) {
-				this._objects.splice(i, 1);
+				this._objects.splice(index, 1);
 			}
 		}
 
@@ -81,15 +81,19 @@ Simulation.prototype = {
 			var object = this._objects[i];
 
 			//Remove out-of-bounds objects
-			if(object.position.x < 0 || object.position.y > terrainWidth) {
+			if(object.position.x < 0 || object.position.x > terrainWidth) {
 				this.removeObject(object);
 				continue;
 			}
 
 			object.work(timeDelta, this);
 
+			//Correct old position by flooring for various calculations
+			var correctOldX = ~~object.position.x;
+			var correctOldY = ~~object.position.y;
+
 			//Calculate effect of gravity if object is in air
-			if(this._terrain.get(~~object.position.x, ~~object.position.y + 1) & Terrain.MASK_EMPTY) {
+			if(correctOldY < terrainHeight && this._terrain.get(correctOldX, correctOldY + 1) & Terrain.MASK_EMPTY) {
 				object.velocity.y += (this._gravity * timeDelta);
 			}
 
@@ -102,9 +106,14 @@ Simulation.prototype = {
 			var correctedY = ~~newY;
 
 			var collision;
-			if(terrainWidth > correctedX && correctedX >= 0 && terrainHeight > correctedY && correctedY >= 0) {
+			//Collisions can only happen if the object is inside the map horizontally, and is not "above" the map
+			if(terrainWidth > correctedX && correctedX >= 0 && correctedY >= 0) {
 				//Determine if the object collided with ground
-				var line = Geom.plotLine(~~object.position.x, ~~object.position.y, correctedX, correctedY);
+				var line = Geom.plotLine(correctOldX, correctOldY, correctedX, correctedY);
+				line.push({
+					x: correctedX,
+					y: correctedY
+				});
 				collision = this._terrain.lineIntersects(line);
 			}
 

@@ -51,6 +51,12 @@ Terrain.prototype = {
 		var points = Geom.plotFilledCircle(midpoint, radius);
 		for(var i = 0; i < points.length; i++) {
 			var point = points[i];
+
+			if(this._mask[point.y] === undefined || this._mask[point.y][point.x] === undefined) {
+				//This point is out of bounds
+				continue;
+			}
+			
 			var mask = this._mask[point.y][point.x];
 
 			if(mask & Terrain.MASK_GROUND) {
@@ -119,6 +125,16 @@ Terrain.prototype = {
 	 * @return {Number} Terrain mask constant
 	 */
 	get: function(x, y) {
+		//"Sky" outside the map is empty
+		if(y < 0) {
+			return Terrain.MASK_EMPTY;
+		}
+
+		//"Ground" under the map is ground
+		if(y >= this._mask.length) {
+			return Terrain.MASK_GROUND;
+		}
+		
 		if(this._mask[y] === undefined || this._mask[y][x] === undefined) {
 			return undefined;
 		}
@@ -164,9 +180,8 @@ Terrain.prototype = {
 	lineIntersects: function(pointList) {
 		for(var i = 0; i < pointList.length; i++) {
 			var p = pointList[i];
-						
-			if(this._mask[p.y][p.x] & Terrain.MASK_GROUND) {
-				console.log(this._mask[p.y][p.x]);
+			
+			if(this.get(p.x, p.y) & Terrain.MASK_GROUND) {				
 				return p;
 			}			
 		}

@@ -50,6 +50,9 @@ TankWar.prototype = {
 				renderer.markDirty(result.dirtyRects[i]);
 			}
 
+			for(var i = 0; i < result.removedObjects.length; i++) {
+				renderer.removeFromScene(result.removedObjects[i]);
+			}
 			
 			renderer.prepareScene();
 			renderer.renderScene();

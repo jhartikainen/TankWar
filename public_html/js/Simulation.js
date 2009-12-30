@@ -45,6 +45,9 @@ Simulation.prototype = {
 	 */
 	removeObject: function(object) {
 		//Added into temp array so it won't mess up the current sim step (if active)
+		if(this._result) {
+			this._result.removedObjects.push(object);
+		}
 		this._deadObjects.push(object);
 	},
 
@@ -54,9 +57,12 @@ Simulation.prototype = {
 	 * @return {Object} step result
 	 */
 	step: function(timeDelta) {
-		var result = {
-			dirtyRects: []
+		this._result = {
+			dirtyRects: [],
+			removedObjects: []
 		};
+
+		var result = this._result;
 
 		//Remove dead objects from the simulation
 		for(var i = 0; i < this._deadObjects.length; i++) {
@@ -138,6 +144,7 @@ Simulation.prototype = {
 			}
 		}
 		
+		this._result = null;
 		return result;
 	}
 };

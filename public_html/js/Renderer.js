@@ -27,6 +27,18 @@ Renderer.prototype = {
 	addToScene: function(renderable) {
 		this._sceneItems.push(renderable);
 	},
+
+	/**
+	 * Remove something from the scene
+	 * @param {Object} renderable
+	 */
+	removeFromScene: function(renderable) {
+		var index = this._sceneItems.indexOf(renderable);
+		if(index != -1) {
+			this._sceneItems.splice(index, 1);
+		}
+	},
+
 	/**
 	 * Marks an area of the screen dirty for redrawing it before other things
 	 * @param {Rect} rect

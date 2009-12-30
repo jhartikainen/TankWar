@@ -53,12 +53,15 @@ Renderer.prototype = {
 		
 		for(var i = 0; i < this._dirtyRects.length; i++) {
 			var rect = this._dirtyRects[i];
-			if(terrainRect.containsRect(rect)) {
-				var x = ~~rect.x,
-				    y = ~~rect.y;
+			if(terrainRect.intersects(rect)) {
+				var intersection = terrainRect.getIntersectionRect(rect);
+				var x = ~~intersection.x,
+				    y = ~~intersection.y,
+				    w = Math.ceil(intersection.width),
+					h = Math.ceil(intersection.height);
 
-			    var imageData = this._context.getImageData(x, y, rect.width, rect.height);
-				this._terrain.renderRect(imageData, new Rect(x, y, rect.width, rect.height));
+			    var imageData = this._context.getImageData(x, y, w, h);
+				this._terrain.renderRect(imageData, new Rect(x, y, w, h));
 				this._context.putImageData(imageData, x, y);
 			}
 		}

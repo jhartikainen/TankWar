@@ -60,6 +60,11 @@ Renderer.prototype = {
 				    w = Math.ceil(intersection.width),
 					h = Math.ceil(intersection.height);
 
+				//If the area is empty skip the rect
+				if(!w || !h) {
+					continue;
+				}
+				
 			    var imageData = this._context.getImageData(x, y, w, h);
 				this._terrain.renderRect(imageData, new Rect(x, y, w, h));
 				this._context.putImageData(imageData, x, y);

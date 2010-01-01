@@ -29,8 +29,14 @@ Terrain.MASK_GROUND = 0x2;
 Terrain.MASK_DESTROYED = 0x4;
 
 Terrain.prototype = {
+	_rect: null,
+	
 	getSize: function() {
 		return this._size;
+	},
+
+	getRect: function() {
+		return this._rect;
 	},
 	
 	setPattern: function(pattern) {
@@ -103,10 +109,18 @@ Terrain.prototype = {
 		//context.drawImage(this._background, 0, 0);
 
 		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+
 		context.beginPath();
+
+		var maxY = context.canvas.height;
+		var minY = maxY;
+		
 		context.moveTo(this._points[0].x, this._points[0].y);
 		for(var i = 1; i < this._points.length; i++) {
 			context.lineTo(this._points[i].x, this._points[i].y);
+			if(this._points[i].y < minY) {
+				minY = this._points[i].y;
+			}
 		}
 
 		context.lineTo(context.canvas.width, context.canvas.height);
@@ -117,6 +131,7 @@ Terrain.prototype = {
 		context.fill();
 
 		this._imageData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
+		this._rect = new Rect(0, minY, context.canvas.width, maxY - minY);
 	},
 
 	/**
@@ -168,6 +183,7 @@ Terrain.prototype = {
 					imageData.data[pt] = this._imageData.data[scaledPt];
 					imageData.data[pt + 1] = this._imageData.data[scaledPt + 1];
 					imageData.data[pt + 2] = this._imageData.data[scaledPt + 2];
+					imageData.data[pt + 3] = this._imageData.data[scaledPt + 3];
 				}
 			}
 		}

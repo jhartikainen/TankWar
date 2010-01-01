@@ -40,14 +40,26 @@ TankWar.prototype = {
 		sim.addObject(tank);
 		renderer.addToScene(tank);
 
+		var effectSim = new Simulation(terrain);
+		var effectRenderer = new Renderer(context, terrain);
+
 		var cloudImg = new Image();
 		cloudImg.src = 'img/clouds.jpg';
 		var clouds = new Cloud(cloudImg);
-		sim.addObject(clouds);
+		effectSim.addObject(clouds);
 		renderer.addToBackground(clouds);
 
+		var log = dojo.byId('log');
+		/*dojo.connect(sim, 'addObject', function() {
+			log.innerHTML = 'Sim objects: ' + (sim._objects.length + sim._newObjects.length);
+		});*/
+
+		var timer = new FrameTimer();
+		timer.tick();
+		
 		var worker = function(){
 			var result = sim.step(0.1);
+			effectSim.step(0.1);
 			var dirtyRects = result.dirtyRects;
 
 			dirtyRects.push(tank.getRect());
@@ -62,6 +74,8 @@ TankWar.prototype = {
 			
 			renderer.prepareScene();
 			renderer.renderScene();
+			timer.tick();
+			log.innerHTML = timer.getSeconds();
 			setTimeout(worker, 10);
 		};
 
@@ -78,10 +92,6 @@ TankWar.prototype = {
 			renderer.addToScene(shell);		
 		};
 
-		var log = dojo.byId('log');
-		dojo.connect(sim, 'addObject', function() {
-			log.innerHTML = 'Sim objects: ' + (sim._objects.length + sim._newObjects.length);
-		});
 		canvas.onmousemove = function(ev) {
 			var x = ev.offsetX || ev.clientX;
 			var y = ev.offsetY || ev.clientY;

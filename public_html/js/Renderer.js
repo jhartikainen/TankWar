@@ -22,7 +22,14 @@ var Renderer = function(context, terrain) {
 
 	this._terrainCanvas = this._bgCanvas.cloneNode(true);
 	this._terrainContext = this._terrainCanvas.getContext('2d');
-	this._terrain.render(this._terrainContext);	
+
+	this._bgContext.drawImage(this._terrain._background, 0, 0);
+	this._terrain.render(this._terrainContext);
+
+	this._context.drawImage(this._bgCanvas, 0, 0);
+	this._context.drawImage(this._terrainCanvas, 0, 0);
+
+	this._dirtyBg = [];
 };
 
 Renderer.prototype = {
@@ -31,6 +38,8 @@ Renderer.prototype = {
 	_sceneItems: [],
 
 	_backgroundItems: [],
+
+	_dirtyBg: [],
 
 	/**
 	 * @type {CanvasRenderingContext2D}
@@ -85,27 +94,42 @@ Renderer.prototype = {
 				if(!w || !h) {
 					continue;
 				}
-				
+
+				var drect = new Rect(x, y, w, h);
 			    var imageData = this._terrainContext.getImageData(x, y, w, h);
-				this._terrain.renderRect(imageData, new Rect(x, y, w, h));
+				this._terrain.renderRect(imageData, drect);
 				this._terrainContext.putImageData(imageData, x, y);
+				this._dirtyBg.push(drect);
 			}
 		}
-
-		this._dirtyRects = [];
 	},
 
 	/**
 	 * Render a scene
 	 */
 	renderScene: function() {
-		for(var i = 0; i < this._backgroundItems.length; i++) {
-			this._backgroundItems[i].render(this._bgContext);
+		var ctxRect = new Rect(0, 0, this._context.canvas.width, this._context.canvas.height);
+		for(var i = 0; i < this._dirtyBg.length; i++) {
+			//Opera is not happy if drawing data goes out of canvas bounds so calculate intersection rect
+			var r = this._dirtyBg[i].getIntersectionRect(ctxRect);
+			this._context.drawImage(this._bgCanvas, r.x, r.y, r.width, r.height, r.x, r.y, r.width, r.height);
+			this._dirtyRects.push(r);
 		}
 
-		this._context.drawImage(this._terrain._background, 0, 0);
-		this._context.drawImage(this._bgCanvas, 0, 0);
-		this._context.drawImage(this._terrainCanvas, 0, 0);
+		this._dirtyBg = [];
+		for(var i = 0; i < this._backgroundItems.length; i++) {
+			this._backgroundItems[i].render(this._context);
+			this._dirtyBg.push(this._backgroundItems[i].getRect());
+		}
+
+		//this._context.drawImage(this._bgCanvas, 0, 0);
+		for(var i = 0; i < this._dirtyRects.length; i++) {
+			var r = this._dirtyRects[i].getIntersectionRect(ctxRect);
+			this._context.drawImage(this._terrainCanvas, r.x, r.y, r.width, r.height, r.x, r.y, r.width, r.height);
+		}
+		//this._context.drawImage(this._terrainCanvas, 0, 0);
+		this._dirtyRects = [];
+
 
 		var terrainSize = this._terrain.getSize();
 		var terrainRect = new Rect(0, 0, terrainSize.getWidth(), terrainSize.getHeight());

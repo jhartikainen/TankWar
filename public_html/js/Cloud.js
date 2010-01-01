@@ -8,7 +8,7 @@ Cloud.prototype = {
 	weight: 0,
 
 	getRect: function() {
-		return new Rect(0, 0, 1, 1);
+		return new Rect(this.position.x, this.position.y, this._image.width, this._image.height);
 	},
 
 	work: function(timeDelta, simulation) {

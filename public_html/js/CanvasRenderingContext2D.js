@@ -4,10 +4,11 @@
 var CanvasRenderingContext2D = {
 	fillStyle: '',
 	canvas: '',
+	clearRect: function(x, y, width, height) { },
 	drawImage: function(image, x, y) { },
 	fillRect: function(x, y, width, height) { },
 	getImageData: function(x, y, width, height) { },
-	putImageData: function(x, y, dataX, dataY, dataWidth, dataHeight) { },
+	putImageData: function(data, x, y, dataX, dataY, dataWidth, dataHeight) { },
 	moveTo: function(x, y) { },
 	lineTo: function(x, y) { },
 	save: function() { },

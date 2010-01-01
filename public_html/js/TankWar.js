@@ -58,8 +58,10 @@ TankWar.prototype = {
 		timer.tick();
 		
 		var worker = function(){
-			var result = sim.step(0.1);
-			effectSim.step(0.1);
+			timer.tick();
+			var seconds = timer.getSeconds();
+			var result = sim.step(seconds);
+			effectSim.step(seconds);
 			var dirtyRects = result.dirtyRects;
 
 			dirtyRects.push(tank.getRect());
@@ -74,9 +76,9 @@ TankWar.prototype = {
 			
 			renderer.prepareScene();
 			renderer.renderScene();
-			timer.tick();
-			log.innerHTML = timer.getSeconds();
-			setTimeout(worker, 10);
+
+			log.innerHTML = seconds;
+			setTimeout(worker, 16);
 		};
 
 		worker();

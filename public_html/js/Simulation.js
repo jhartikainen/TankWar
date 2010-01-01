@@ -28,7 +28,7 @@ Simulation.prototype = {
 	 */
 	_newObjects: [],
 	
-	_gravity: 10,
+	_gravity: 200,
 
 	/**
 	 * Add object into simulation (will be inserted when the next step starts)

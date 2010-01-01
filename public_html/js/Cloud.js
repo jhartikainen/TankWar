@@ -35,6 +35,7 @@ Cloud.prototype = {
 	 * @param {CanvasRenderingContext2D} context
 	 */
 	render: function(context) {
+		//console.log(this._x);
 		var x = ~~this._x;
 		context.drawImage(this._image, x, this.position.y);
 		if(x > 0) {

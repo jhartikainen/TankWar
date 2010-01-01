@@ -110,10 +110,12 @@ Renderer.prototype = {
 	renderScene: function() {
 		var ctxRect = new Rect(0, 0, this._context.canvas.width, this._context.canvas.height);
 		for(var i = 0; i < this._dirtyBg.length; i++) {
-			//Opera is not happy if drawing data goes out of canvas bounds so calculate intersection rect
-			var r = this._dirtyBg[i].getIntersectionRect(ctxRect);
-			this._context.drawImage(this._bgCanvas, r.x, r.y, r.width, r.height, r.x, r.y, r.width, r.height);
-			this._dirtyRects.push(r);
+			if(this._dirtyBg[i].intersects(ctxRect)) {
+				//Opera is not happy if drawing data goes out of canvas bounds so calculate intersection rect
+				var r = this._dirtyBg[i].getIntersectionRect(ctxRect);
+				this._context.drawImage(this._bgCanvas, r.x, r.y, r.width, r.height, r.x, r.y, r.width, r.height);
+				this._dirtyRects.push(r);
+			}
 		}
 
 		this._dirtyBg = [];
@@ -124,8 +126,10 @@ Renderer.prototype = {
 
 		//this._context.drawImage(this._bgCanvas, 0, 0);
 		for(var i = 0; i < this._dirtyRects.length; i++) {
-			var r = this._dirtyRects[i].getIntersectionRect(ctxRect);
-			this._context.drawImage(this._terrainCanvas, r.x, r.y, r.width, r.height, r.x, r.y, r.width, r.height);
+			if(this._dirtyRects[i].intersects(ctxRect)) {
+				var r = this._dirtyRects[i].getIntersectionRect(ctxRect);
+				this._context.drawImage(this._terrainCanvas, r.x, r.y, r.width, r.height, r.x, r.y, r.width, r.height);
+			}
 		}
 		//this._context.drawImage(this._terrainCanvas, 0, 0);
 		this._dirtyRects = [];

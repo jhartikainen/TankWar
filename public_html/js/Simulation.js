@@ -52,6 +52,14 @@ Simulation.prototype = {
 	},
 
 	/**
+	 * Return current wind
+	 * @return {Number}
+	 */
+	getWind: function() {
+		return 25;
+	},
+
+	/**
 	 * Step in the simulation
 	 * @param {Number} timeDelta Simulation time step since last frame
 	 * @return {Object} step result

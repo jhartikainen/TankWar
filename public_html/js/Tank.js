@@ -12,6 +12,8 @@ var Tank = function(pos) {
 };
 
 Tank.prototype = {
+	weight: 1,
+	
 	destroy: function()	{
 		this._health = 0;
 	},

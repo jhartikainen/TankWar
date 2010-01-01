@@ -33,12 +33,18 @@ TankWar.prototype = {
 
 		var renderer = new Renderer(context, terrain);
 
-		terrain.render(context);
+		//terrain.render(context);
 		var tank = new Tank(new Point(100, 100));
 
 		var sim = new Simulation(terrain);
 		sim.addObject(tank);
 		renderer.addToScene(tank);
+
+		var cloudImg = new Image();
+		cloudImg.src = 'img/clouds.jpg';
+		var clouds = new Cloud(cloudImg);
+		sim.addObject(clouds);
+		renderer.addToBackground(clouds);
 
 		var worker = function(){
 			var result = sim.step(0.1);

@@ -12,6 +12,8 @@ Shell.prototype = {
 	_smokeInterval: 0,
 	_renderSmoke: false,
 
+	weight: 1,
+	
 	/**
 	 * Launch shell from its present position 
 	 * @param {Number} angle

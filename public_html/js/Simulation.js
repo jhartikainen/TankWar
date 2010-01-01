@@ -100,7 +100,7 @@ Simulation.prototype = {
 
 			//Calculate effect of gravity if object is in air
 			if(correctOldY < terrainHeight && this._terrain.get(correctOldX, correctOldY + 1) & Terrain.MASK_EMPTY) {
-				object.velocity.y += (this._gravity * timeDelta);
+				object.velocity.y += (object.weight * this._gravity * timeDelta);
 			}
 
 			//Calculate new location, taking time into account

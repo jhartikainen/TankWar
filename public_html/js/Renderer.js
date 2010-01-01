@@ -5,9 +5,24 @@
  */
 var Renderer = function(context, terrain) {
 	this._terrain = terrain;
+
 	this._context = context;
 	this._dirtyRects = [];
 	this._sceneItems = [];
+	this._backgroundItems = [];
+
+	var terrainSize = terrain.getSize();
+	
+	this._bgCanvas = document.createElement('canvas');
+	this._bgCanvas.width = terrainSize.getWidth();
+	this._bgCanvas.height = terrainSize.getHeight();
+	this._bgContext = this._bgCanvas.getContext('2d');
+	
+	this._bgContext.globalCompositeOperation = 'copy';
+
+	this._terrainCanvas = this._bgCanvas.cloneNode(true);
+	this._terrainContext = this._terrainCanvas.getContext('2d');
+	this._terrain.render(this._terrainContext);	
 };
 
 Renderer.prototype = {
@@ -15,10 +30,16 @@ Renderer.prototype = {
 
 	_sceneItems: [],
 
+	_backgroundItems: [],
+
 	/**
 	 * @type {CanvasRenderingContext2D}
 	 */
 	_context: null,
+
+	addToBackground: function(renderable) {
+		this._backgroundItems.push(renderable);	
+	},
 
 	/**
 	 * Add a renderable object to the scene
@@ -65,9 +86,9 @@ Renderer.prototype = {
 					continue;
 				}
 				
-			    var imageData = this._context.getImageData(x, y, w, h);
+			    var imageData = this._terrainContext.getImageData(x, y, w, h);
 				this._terrain.renderRect(imageData, new Rect(x, y, w, h));
-				this._context.putImageData(imageData, x, y);
+				this._terrainContext.putImageData(imageData, x, y);
 			}
 		}
 
@@ -78,6 +99,14 @@ Renderer.prototype = {
 	 * Render a scene
 	 */
 	renderScene: function() {
+		for(var i = 0; i < this._backgroundItems.length; i++) {
+			this._backgroundItems[i].render(this._bgContext);
+		}
+
+		this._context.drawImage(this._terrain._background, 0, 0);
+		this._context.drawImage(this._bgCanvas, 0, 0);
+		this._context.drawImage(this._terrainCanvas, 0, 0);
+
 		var terrainSize = this._terrain.getSize();
 		var terrainRect = new Rect(0, 0, terrainSize.getWidth(), terrainSize.getHeight());
 

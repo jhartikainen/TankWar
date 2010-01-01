@@ -100,8 +100,9 @@ Terrain.prototype = {
 		
 		context.fillRect(0, 0, context.canvas.width, context.canvas.height);*/
 
-		context.drawImage(this._background, 0, 0);
+		//context.drawImage(this._background, 0, 0);
 
+		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 		context.beginPath();
 		context.moveTo(this._points[0].x, this._points[0].y);
 		for(var i = 1; i < this._points.length; i++) {

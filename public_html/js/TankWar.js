@@ -46,6 +46,8 @@ TankWar.prototype = {
 		sim.addObject(clouds);
 		renderer.addToBackground(clouds);
 
+		terrain.render(context);
+
 		var worker = function(){
 			var result = sim.step(0.1);
 			var dirtyRects = result.dirtyRects;

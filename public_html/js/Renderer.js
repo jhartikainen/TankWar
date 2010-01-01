@@ -11,18 +11,14 @@ var Renderer = function(context, terrain) {
 	this._sceneItems = [];
 	this._backgroundItems = [];
 
-	var terrainSize = terrain.getSize();
-	
-	this._bgCanvas = document.createElement('canvas');
-	this._bgCanvas.width = terrainSize.getWidth();
-	this._bgCanvas.height = terrainSize.getHeight();
-	this._bgContext = this._bgCanvas.getContext('2d');
-	
-	this._bgContext.globalCompositeOperation = 'copy';
-
-	this._terrainCanvas = this._bgCanvas.cloneNode(true);
-	this._terrainContext = this._terrainCanvas.getContext('2d');
-	this._terrain.render(this._terrainContext);	
+	this._bg = document.createElement('div');
+	this._bg.style.position = 'relative';
+	this._bg.style.backgroundImage = 'url(img/sky.jpg)';
+	context.canvas.parentNode.appendChild(this._bg);
+	this._bg.appendChild(context.canvas);
+	context.canvas.style.position = 'absolute';
+	context.canvas.style.left = '0px';
+	context.canvas.style.top = '0px';
 };
 
 Renderer.prototype = {
@@ -71,6 +67,10 @@ Renderer.prototype = {
 	prepareScene: function() {
 		var terrainSize = this._terrain.getSize();
 		var terrainRect = new Rect(0, 0, terrainSize.getWidth(), terrainSize.getHeight());
+
+		for(var i = 0; i < this._backgroundItems.length; i++) {
+			this._backgroundItems[i].render(this._bg);
+		}
 		
 		for(var i = 0; i < this._dirtyRects.length; i++) {
 			var rect = this._dirtyRects[i];
@@ -86,9 +86,9 @@ Renderer.prototype = {
 					continue;
 				}
 				
-			    var imageData = this._terrainContext.getImageData(x, y, w, h);
+			    var imageData = this._context.getImageData(x, y, w, h);
 				this._terrain.renderRect(imageData, new Rect(x, y, w, h));
-				this._terrainContext.putImageData(imageData, x, y);
+				this._context.putImageData(imageData, x, y);
 			}
 		}
 
@@ -99,14 +99,6 @@ Renderer.prototype = {
 	 * Render a scene
 	 */
 	renderScene: function() {
-		for(var i = 0; i < this._backgroundItems.length; i++) {
-			this._backgroundItems[i].render(this._bgContext);
-		}
-
-		this._context.drawImage(this._terrain._background, 0, 0);
-		this._context.drawImage(this._bgCanvas, 0, 0);
-		this._context.drawImage(this._terrainCanvas, 0, 0);
-
 		var terrainSize = this._terrain.getSize();
 		var terrainRect = new Rect(0, 0, terrainSize.getWidth(), terrainSize.getHeight());
 

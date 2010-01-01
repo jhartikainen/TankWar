@@ -163,11 +163,13 @@ Terrain.prototype = {
 					imageData.data[pt] = 0xFF;
 					imageData.data[pt + 1] = 0xFF;
 					imageData.data[pt + 2] = 0xFF;
+					imageData.data[pt + 3] = 0xFF;
 				}
 				else {
 					imageData.data[pt] = this._imageData.data[scaledPt];
 					imageData.data[pt + 1] = this._imageData.data[scaledPt + 1];
 					imageData.data[pt + 2] = this._imageData.data[scaledPt + 2];
+					imageData.data[pt + 3] = this._imageData.data[scaledPt + 3];
 				}
 			}
 		}

@@ -2,6 +2,11 @@ var Cloud = function(image) {
 	this._image = image;
 	this.position = new Vector2(0, 0);
 	this.velocity = new Vector2(10, 0);
+	this._el = document.createElement('div');
+	this._el.style.position = 'absolute';
+	this._el.style.backgroundImage = 'url(' + image.src + ')';
+	this._el.style.width = image.width + 'px';
+	this._el.style.height = image.height + 'px';
 };
 
 Cloud.prototype = {
@@ -12,7 +17,7 @@ Cloud.prototype = {
 	},
 
 	work: function(timeDelta, simulation) {
-		this.velocity.x = 10;
+		//this.velocity.x = 10;
 	},
 
 	collision: function(terrain) {
@@ -24,6 +29,11 @@ Cloud.prototype = {
 	 * @param {CanvasRenderingContext2D} context
 	 */
 	render: function(context) {
-		context.drawImage(this._image, this.position.x, this.position.y);
+		if(!this._el.parentNode) {
+			context.insertBefore(this._el, context.firstChild);
+		}
+
+		this._el.style.left = (~~this.position.x) + 'px';
+		this._el.style.top = (~~this.position.y) + 'px';
 	}
 };

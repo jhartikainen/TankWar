@@ -11,6 +11,7 @@ var Shell = function(pos) {
 Shell.prototype = {
 	_smokeInterval: 0,
 	_renderSmoke: false,
+	collides: true,
 
 	weight: 1,
 	

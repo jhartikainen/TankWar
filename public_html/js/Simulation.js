@@ -119,17 +119,21 @@ Simulation.prototype = {
 			var correctedX = ~~newX;
 			var correctedY = ~~newY;
 
-			var collision;
+			//Init collision as null to default as no collision
+			var collision = null;
+			
 			//Collisions can only happen if the object is inside the map horizontally, and is not "above" the map
 			//Also, the check is only performed if the object is actually moving
-			if(!(object.velocity.x == 0 && object.velocity.y == 0) && terrainWidth > correctedX && correctedX >= 0 && correctedY >= 0) {
-				//Determine if the object collided with ground
-				var line = Geom.plotLine(correctOldX, correctOldY, correctedX, correctedY);
-				line.push({
-					x: correctedX,
-					y: correctedY
-				});
-				collision = this._terrain.lineIntersects(line);
+			if(object.collides) {
+				if(!(object.velocity.x == 0 && object.velocity.y == 0) && terrainWidth > correctedX && correctedX >= 0 && correctedY >= 0) {
+					//Determine if the object collided with ground
+					var line = Geom.plotLine(correctOldX, correctOldY, correctedX, correctedY);
+					line.push({
+						x: correctedX,
+						y: correctedY
+					});
+					collision = this._terrain.lineIntersects(line);
+				}
 			}
 
 			if(collision) {
